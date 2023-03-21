@@ -17,6 +17,7 @@ Assets = {Asset("IMAGE", "images/equip_slots.tex"), Asset("ATLAS", "images/equip
 
 -- 定义装备栏插槽
 EQUIPSLOTS_MAP = {
+    -- 这三个是系统默认的 不做处理
     -- HANDS = "hands", -- 手持
     -- BODY = "body", -- 身体
     -- HEAD = "head" -- 头部
@@ -84,20 +85,8 @@ local function InitSlot()
                     if GLOBAL.EQUIPSLOTS.BACK ~= nil then
                         self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "images/equip_slots.xml", "back.tex")
                     end
-                -- 暂未成功 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
-                -- local inventory = self.owner.replica.inventory
-                -- local overflow = inventory:GetOverflowContainer()
-                -- overflow = (overflow ~= nil and overflow:IsOpenedBy(self.owner)) and overflow or nil
-                -- local do_integrated_backpack = overflow ~= nil and self.integrated_backpack
-                -- print("do_integrated_backpack", do_integrated_backpack)
-                -- if do_integrated_backpack then
-                --     local W = 68 * 3
-                --     local SEP = 12
-                --     local INTERSEP = 28
-                --     local x = self.inv[#self.inv]:GetPosition().x + W * 0.5 + INTERSEP + 61 + 30
-                --     self.integrated_arrow:SetPosition(x, 8)
-                -- end
                 end
+                -- 暂未成功 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
             end
 
             function Inv:Refresh()
@@ -111,7 +100,6 @@ local function InitSlot()
             end
         end
     )
-
     -- 看不懂 大概意思就是说进入游戏后先获取原来人物的物品 比如你本来是6格 会把多余的物品给你卸下来
     AddPrefabPostInit(
         "inventory_classified",
@@ -160,67 +148,6 @@ local function InitSlot()
             end
         end
     )
-
-    -- 开启护符栏后的修复
-    if GLOBAL.EQUIPSLOTS.NECK then
-        -- 绿护符在制作栏中显示-20%
-        local Inv = GLOBAL.require "widgets/redux/craftingmenu_ingredients"
-        local SetRecipe_base = Inv.SetRecipe
-        Inv.SetRecipe = function(self, ...)
-            local inventory = self.owner.replica.inventory
-            local GetEquippedItem_Orig = inventory.GetEquippedItem
-            inventory.GetEquippedItem = function(inst)
-                return GetEquippedItem_Orig(inst, GLOBAL.EQUIPSLOTS.NECK)
-            end
-            SetRecipe_base(self, ...)
-            inventory.GetEquippedItem = GetEquippedItem_Orig
-        end
-        -- 红护符复活
-        -- AddStategraphPostInit(
-        --     "wilson",
-        --     function(self)
-        --         local amulet_rebirth_state = self.states["amulet_rebirth"]
-        --         amulet_rebirth_state.onenter = function()
-
-        --         end
-        --     end
-        -- )
-    end
-
-    -- 开启背包栏后的修复
-    if GLOBAL.EQUIPSLOTS.BACK then
-        -- 看不懂 大概意思修复捡东西进背包
-        AddComponentPostInit(
-            "inventory",
-            function(self, inst)
-                local original_Equip = self.Equip
-                self.Equip = function(self, item, old_to_active)
-                    if
-                        original_Equip(self, item, old_to_active) and item and item.components and
-                            item.components.equippable
-                     then
-                        local eslot = item.components.equippable.equipslot
-                        if self.equipslots[eslot] ~= item then
-                            if eslot == GLOBAL.EQUIPSLOTS.BACK and item.components.container ~= nil then
-                                self.inst:PushEvent("setoverflow", {overflow = item})
-                            end
-                        end
-                        return true
-                    else
-                        return
-                    end
-                end
-
-                self.GetOverflowContainer = function()
-                    if self.ignoreoverflow then
-                        return
-                    end
-                    local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
-                    return item ~= nil and item.components.container or nil
-                end
-            end
-        )
-    end
 end
 InitSlot()
 
@@ -252,7 +179,6 @@ local function InitPrefab()
                 local function InitNeck(inst)
                     inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BODY
                 end
-
                 -- 标注护符栏物品
                 for k, v in pairs(symbol_neck) do
                     AddPrefabPostInit(k, InitNeck)
@@ -288,7 +214,7 @@ local function InitPrefab()
                     end
                     inst.components.container:Open(owner)
                 end
-                -- 卸载背包 大概意思就是卸载背包时清楚之前的形象
+                -- 卸载背包 大概意思就是卸载背包时清除之前的形象
                 local function bagonunequip(inst, owner)
                     if DST then
                         local skin_build = inst:GetSkinBuild()
@@ -382,3 +308,80 @@ local function InitPrefab()
     end
 end
 InitPrefab()
+
+-- 因为部分物品调整装备栏带来的修复
+local function RepairExtra()
+    -- 开启护符栏后的修复
+    if GLOBAL.EQUIPSLOTS.NECK then
+        -- 绿护符在制作栏中显示-20%
+        local Inv = GLOBAL.require "widgets/redux/craftingmenu_ingredients"
+        local SetRecipe_base = Inv.SetRecipe
+
+        Inv.SetRecipe = function(self, ...)
+            local inventory = self.owner.replica.inventory
+            local GetEquippedItem_Orig = inventory.GetEquippedItem
+            inventory.GetEquippedItem = function(inst)
+                return GetEquippedItem_Orig(inst, GLOBAL.EQUIPSLOTS.NECK)
+            end
+            SetRecipe_base(self, ...)
+            inventory.GetEquippedItem = GetEquippedItem_Orig
+        end
+
+        -- 红护符复活
+        AddStategraphPostInit(
+            "wilson",
+            function(self)
+                local original_amulet_rebirth = self.states["amulet_rebirth"]
+                local original_amulet_rebirth_onexit = original_amulet_rebirth.onexit
+                original_amulet_rebirth.onexit = function(inst)
+                    local item = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.NECK)
+                    if item and item.prefab == "amulet" then
+                        item = inst.components.inventory:RemoveItem(item)
+                        if item then
+                            item:Remove()
+                            item.persists = false
+                        end
+                    end
+                    original_amulet_rebirth_onexit(inst)
+                end
+            end
+        )
+    end
+
+    -- 开启背包栏后的修复
+    if GLOBAL.EQUIPSLOTS.BACK then
+        -- 对人物物品变化添加额外的事件
+        AddComponentPostInit(
+            "inventory",
+            function(self, inst)
+                local original_Equip = self.Equip
+                -- 这个是装备背包的方法
+                self.Equip = function(self, item, old_to_active)
+                    if
+                        original_Equip(self, item, old_to_active) and item and item.components and
+                            item.components.equippable
+                     then
+                        local eslot = item.components.equippable.equipslot
+                        if self.equipslots[eslot] ~= item then
+                            if eslot == GLOBAL.EQUIPSLOTS.BACK and item.components.container ~= nil then
+                                self.inst:PushEvent("setoverflow", {overflow = item})
+                            end
+                        end
+                        return true
+                    else
+                        return
+                    end
+                end
+                -- 这个应该就是捡东西了
+                self.GetOverflowContainer = function()
+                    if self.ignoreoverflow then
+                        return
+                    end
+                    local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                    return item ~= nil and item.components.container or nil
+                end
+            end
+        )
+    end
+end
+RepairExtra()
