@@ -1,0 +1,10 @@
+<Atlas>
+	<Texture filename="equip_slots.tex" />
+	<Elements>
+		<Element name="belly.tex" u1="0.5" u2="0.75" v1="0.0" v2="0.5" />
+		<Element name="neck.tex" u1="0.75" u2="1.0" v1="0.0" v2="0.5" />
+		<Element name="back.tex" u1="0.0" u2="0.25" v1="0.0" v2="0.5" />
+		<!-- <Element name="armor.tex" u1="0.25" u2="0.5" v1="0.0" v2="0.5" /> -->
+		<!-- <Element name="backpack+armor.tex"  u1="0.0"  u2="0.25" v1="0.5" v2="1.0" /> -->
+	</Elements>
+</Atlas>
