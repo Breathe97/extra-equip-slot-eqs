@@ -1,2 +1,2 @@
-# extra_equip_slot_eqs
+# extra-equip-slot-eqs
 饥荒模组：额外的装备栏
