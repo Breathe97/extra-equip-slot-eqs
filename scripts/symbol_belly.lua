@@ -14,6 +14,19 @@ return {
     carnival_vest_a = "carnival_vest_a", -- 叽叽喳喳围巾
     carnival_vest_b = "carnival_vest_b", -- 叽叽喳喳斗篷
     carnival_vest_c = "carnival_vest_c", -- 叽叽喳喳小披肩
+    -- costume_fool_body = "costume_fool_body", -- 小丑服
+    -- costume_doll_body = "costume_doll_body", -- 玩偶服
+    -- costume_tree_body = "costume_tree_body", -- 树木服
+    -- costume_king_body = "costume_king_body", -- 国王服
+    -- costume_queen_body = "costume_queen_body", -- 女王服
+    -- costume_mirror_body = "costume_mirror_body", -- 镜子服
+    -- costume_blacksmith_body = "costume_blacksmith_body", -- 小丑服
+    -- 单机物品
+    tarsuit = "tarsuit", -- 焦油套装
+    blubbersuit = "blubbersuit", -- 鲸脂套装
+    amor_lifejacket = "amor_lifejacket", -- 救生衣
+    armor_snakeskin = "armor_snakeskin", -- 蛇皮夹克
+    armor_windbreaker = "armor_windbreaker", -- 防风衣
     -- 服装栏 模组物品
     down_filled_coat = "down_filled_coat", -- 能力勋章
     cassock = "cassock", -- 神话书说

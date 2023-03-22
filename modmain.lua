@@ -32,7 +32,6 @@ for k, v in pairs(EQUIPSLOTS_MAP) do
         GLOBAL.EQUIPSLOTS[k] = v
     end
 end
-
 -- 初始化插槽数量和位置
 local function InitSlot()
     -- 看不懂 大概意思就是说在原来的装备栏后面添加额外的衣服格子、背包格子、护符格子
@@ -195,18 +194,18 @@ local function InitPrefab()
                 local function bagonequip(inst, owner)
                     if DST then
                         local skin_build = inst:GetSkinBuild() -- 皮肤构造器(用这个api来生成新贴图)
-                        local toAnim = owner.AnimState
+                        local animState = owner.AnimState
                         local old_swap = symbol_back[inst.prefab] -- 当前贴图名称
                         local place_swap = "swap_body_tall" -- 将要替换的贴图名称(据说只有一个 只能给背包用)
                         local new_swap = "swap_" .. old_swap -- 新的贴图名称
                         -- 下面是啥意思不知道 就是把变量抽离了一下 看起来只有一行 好看
                         if skin_build ~= nil then
                             owner:PushEvent("equipskinneditem", inst:GetSkinName())
-                            toAnim:OverrideItemSkinSymbol(old_swap, skin_build, old_swap, inst.GUID, new_swap)
-                            toAnim:OverrideItemSkinSymbol(place_swap, skin_build, "swap_body", inst.GUID, new_swap)
+                            animState:OverrideItemSkinSymbol(old_swap, skin_build, old_swap, inst.GUID, new_swap)
+                            animState:OverrideItemSkinSymbol(place_swap, skin_build, "swap_body", inst.GUID, new_swap)
                         else
-                            toAnim:OverrideSymbol(place_swap, old_swap, "backpack")
-                            toAnim:OverrideSymbol(place_swap, old_swap, "swap_body")
+                            animState:OverrideSymbol(place_swap, old_swap, "backpack")
+                            animState:OverrideSymbol(place_swap, old_swap, "swap_body")
                         end
                     end
                     if not DST then
@@ -232,7 +231,7 @@ local function InitPrefab()
                 -- 给背包分配插槽
                 local function InitBack(inst)
                     inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BODY
-                    -- 重写背包事件
+                    -- 监听背包装备卸下事件
                     if DST then
                         inst.components.equippable:SetOnEquip(bagonequip)
                         inst.components.equippable:SetOnUnequip(bagonunequip)
