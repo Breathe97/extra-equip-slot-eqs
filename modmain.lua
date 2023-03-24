@@ -373,11 +373,18 @@ local function RepairExtra()
                 end
                 -- 这个应该就是捡东西了
                 self.GetOverflowContainer = function()
+                    -- if self.ignoreoverflow then
+                    --     return
+                    -- end
+                    -- local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                    -- return item ~= nil and item.components.container or nil
                     if self.ignoreoverflow then
                         return
                     end
                     local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
-                    return item ~= nil and item.components.container or nil
+                    return (item ~= nil and item.components.container ~= nil and item.components.container.canbeopened) and
+                        item.components.container or
+                        nil
                 end
             end
         )
