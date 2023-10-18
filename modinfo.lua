@@ -11,9 +11,9 @@ description =
 󰀜 其他模组的适配可以留言（物品的英文+中文+模组的名称）。
 
 󰀏 近期更新：
+1.1.6：对融合式背包栏箭头进行调整。
+1.1.5：尝试修复部分客户端背包物品不能正常识别和拾取。
 1.1.4：兼容了海难的服装类物品。
-1.1.3：修复融合式背包栏可能的异常问题。
-1.1.1：支持对其他物品的智能识别分配插槽栏。
 1.1.0：新增智能护符栏选项，自动匹配原身体物品是否属于护符栏。
 
 󰀀 图标也抄过来了 嘻嘻。
@@ -25,7 +25,7 @@ priority = -1 -- 优先级 默认0
 
 author = "Breathe" -- mod的作者
 
-version = "1.1.4" -- mod的版本号
+version = "1.1.6" -- mod的版本号
 
 api_version = 10 -- API版本号
 
@@ -50,14 +50,14 @@ configuration_options = {
         hover = "是否扩展服装栏",
         options = {
             {
-                description = "是",
-                data = true,
-                hover = "会额外扩展一个服装栏。"
-            },
-            {
                 description = "否",
                 data = false,
                 hover = "下都下了，你确定不开启？"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "会额外扩展一个服装栏。"
             }
         },
         default = true
@@ -68,14 +68,14 @@ configuration_options = {
         hover = "是否扩展护符栏",
         options = {
             {
-                description = "是",
-                data = true,
-                hover = "会额外扩展一个护符栏。"
-            },
-            {
                 description = "否",
                 data = false,
                 hover = "下都下了，你确定不开启？"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "会额外扩展一个护符栏。"
             }
         },
         default = true
@@ -86,14 +86,14 @@ configuration_options = {
         hover = "是否扩展背包栏",
         options = {
             {
-                description = "是",
-                data = true,
-                hover = "会额外扩展一个背包栏。"
-            },
-            {
                 description = "否",
                 data = false,
                 hover = "下都下了，你确定不开启？"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "会额外扩展一个背包栏。"
             }
         },
         default = true
@@ -103,16 +103,16 @@ configuration_options = {
         label = "自动识别服装栏物品",
         hover = "通过物品的名称自动识别该物品是否为服装类",
         options = {
-            -- {
-            --     description = "是",
-            --     data = true,
-            --     hover = "自动识别未知的模组物品并分配至服装栏。"
-            -- },
             {
                 description = "否",
                 data = false,
                 hover = "衣服目前没有一个比较好的适配办法，所以暂时不支持。"
-            }
+            },
+            -- {
+            --     description = "是",
+            --     data = true,
+            --     hover = "自动识别未知的模组物品并分配至服装栏。"
+            -- }
         },
         default = false
     },
@@ -122,14 +122,14 @@ configuration_options = {
         hover = "通过物品的名称自动识别该物品是否为护符类",
         options = {
             {
-                description = "是",
-                data = true,
-                hover = "自动识别未知的模组物品并分配至护符栏。"
-            },
-            {
                 description = "否",
                 data = false,
                 hover = "下都下了，你确定不开启？"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "自动识别未知的模组物品并分配至护符栏。"
             }
         },
         default = true
@@ -140,14 +140,14 @@ configuration_options = {
         hover = "通过物品的名称自动识别该物品是否为背包类",
         options = {
             {
-                description = "是",
-                data = true,
-                hover = "自动识别未知的模组物品并分配至背包栏。"
-            },
-            {
                 description = "否",
                 data = false,
                 hover = "下都下了，你确定不开启？"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "自动识别未知的模组物品并分配至背包栏。"
             }
         },
         default = true

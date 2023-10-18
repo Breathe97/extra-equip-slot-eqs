@@ -15,7 +15,7 @@ return {
     brooch5 = "brooch5", -- 伊蕾娜
     brooch6 = "brooch6", -- 伊蕾娜
     brooch7 = "brooch7", -- 伊蕾娜
-    brooch7 = "brooch7", -- 伊蕾娜
+    brooch8 = "brooch8", -- 伊蕾娜
     brooch9 = "brooch9", -- 伊蕾娜
     moon_brooch = "moon_brooch", -- 伊蕾娜
     star_brooch = "star_brooch", -- 伊蕾娜

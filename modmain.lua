@@ -35,118 +35,125 @@ end
 -- 初始化插槽数量和位置
 local function InitSlot()
     -- 看不懂 大概意思就是说在原来的装备栏后面添加额外的衣服格子、背包格子、护符格子
-    AddGlobalClassPostConstruct(
-        "widgets/inventorybar",
-        "Inv",
-        function()
-            local Inv = GLOBAL.require "widgets/inventorybar"
-            local Inv_Refresh_base = Inv.Refresh or function()
-                    return ""
-                end
-            local Inv_Rebuild_base = Inv.Rebuild or function()
-                    return ""
-                end
+    local function PostConstruct()
+        local Inv = GLOBAL.require "widgets/inventorybar"
+        local Inv_Refresh_base = Inv.Refresh or function()
+            return ""
+        end
+        local Inv_Rebuild_base = Inv.Rebuild or function()
+            return ""
+        end
 
-            function Inv:LoadExtraSlots(self)
-                -- 反正就是计算原始宽度 这段抄的社区 id:2324689937的 我的确不会写 只好说声谢谢了
-                local function CalcTotalWidth(num_slots, num_equip, num_buttons)
-                    -- See `scripts/widgets/inventorybar.lua:212-217`.
-                    local W = 68
-                    local SEP = 12
-                    local INTERSEP = 28
-                    local num_slotintersep = math.ceil(num_slots / 5)
-                    local num_equipintersep = num_buttons > 0 and 1 or 0
-                    return (num_slots + num_equip + num_buttons) * W +
-                        (num_slots + num_equip + num_buttons - num_slotintersep - num_equipintersep - 1) * SEP +
-                        (num_slotintersep + num_equipintersep) * INTERSEP
-                end
+        function Inv:LoadExtraSlots(self)
+            -- See `scripts/widgets/inventorybar.lua:212-217`.
+            local W = 68 -- 格子宽度
+            local SEP = 12 -- 格子间隙
+            local INTERSEP = 28 -- 组格子间隙 5个一组
 
-                local num_slots = self.owner.replica.inventory:GetNumSlots() -- 物品栏个数
-                local num_equip = #self.equipslotinfo -- 装备栏个数
-                local do_self_inspect = not (self.controller_build or GLOBAL.GetGameModeProperty("no_avatar_popup")) -- 不知道啥意思
+            -- 反正就是计算原始宽度
+            local function CalcTotalWidth(num_slots, num_equip, num_buttons)
 
-                local scale_default = 1.22 -- See `scripts/widgets/inventorybar.lua:261-262`. 原始缩放值
-                local total_w_default = CalcTotalWidth(num_slots, 3, 1) -- 默认宽度
-                local total_w_real = CalcTotalWidth(num_slots, num_equip, do_self_inspect and 1 or 0) -- 现在的宽度
+                local slot_group = math.ceil(num_slots / 5)
+                local num_equipintersep = num_buttons > 0 and 1 or 0
 
-                local scale_real = scale_default / (total_w_default / total_w_real) -- 稍微改了下 我有强迫症 我想把 total_w_default 放中间
-                self.bg:SetScale(scale_real, 1, 1)
-                self.bgcover:SetScale(scale_real, 1, 1)
+                local inventory_w = num_slots * W + (num_slots * SEP) + (slot_group - 1) * (INTERSEP - SEP) -- 物品栏宽度
+                local equip_w = num_equip * W + (num_equip - 1) * SEP -- 装备栏宽度
+                local buttons_w = num_equipintersep * W -- 最后的按钮宽度
 
-                if self.addextraslots == nil then
-                    self.addextraslots = 1
-                    if GLOBAL.EQUIPSLOTS.BELLY ~= nil then
-                        self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BELLY, "images/equip_slots.xml", "belly.tex")
-                    end
-                    if GLOBAL.EQUIPSLOTS.NECK ~= nil then
-                        self:AddEquipSlot(GLOBAL.EQUIPSLOTS.NECK, "images/equip_slots.xml", "neck.tex")
-                    end
-                    if GLOBAL.EQUIPSLOTS.BACK ~= nil then
-                        self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "images/equip_slots.xml", "back.tex")
-                    end
-                end
-                -- 暂未成功 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
+                local offset_x = inventory_w + equip_w + buttons_w -- 总宽度
+                return offset_x
             end
 
-            function Inv:Refresh()
-                Inv_Refresh_base(self)
-                Inv:LoadExtraSlots(self)
-            end
+            local num_slots = self.owner.replica.inventory:GetNumSlots() -- 物品栏个数
+            local num_equip = #self.equipslotinfo -- 装备栏个数
+            local do_self_inspect = not (self.controller_build or GLOBAL.GetGameModeProperty("no_avatar_popup")) -- 不知道啥意思
 
-            function Inv:Rebuild()
-                Inv_Rebuild_base(self)
-                Inv:LoadExtraSlots(self)
+            local scale_default = 1.22 -- See `scripts/widgets/inventorybar.lua:261-262`. 原始缩放值
+            local total_w_default = CalcTotalWidth(num_slots, 3, 1) -- 默认宽度
+            local total_w_real = CalcTotalWidth(num_slots, num_equip, do_self_inspect and 1 or 0) -- 现在的宽度
+            local scale_real = scale_default / (total_w_default / total_w_real) -- 稍微改了下 我有强迫症 我想把 total_w_default 放中间
+
+            self.bg:SetScale(scale_real, 1, 1)
+            self.bgcover:SetScale(scale_real, 1, 1)
+
+            local more_lost_num = num_equip - 3 -- 额外增加的格子数量
+
+            if self.addextraslots == nil then
+                self.addextraslots = 1
+                if GLOBAL.EQUIPSLOTS.BELLY ~= nil then
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BELLY, "images/equip_slots.xml", "belly.tex")
+                end
+                if GLOBAL.EQUIPSLOTS.NECK ~= nil then
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.NECK, "images/equip_slots.xml", "neck.tex")
+                end
+                if GLOBAL.EQUIPSLOTS.BACK ~= nil then
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "images/equip_slots.xml", "back.tex")
+                end
+            end
+            -- 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
+            if GLOBAL.EQUIPSLOTS.BACK ~= nil and more_lost_num > 0 then
+                local offset_x = ((W + SEP) / 2) * (more_lost_num + 1) -- 偏移值(为啥要 / 2 不知道 )
+                self.integrated_arrow:Nudge(Point(offset_x, 0, 0))
             end
         end
-    )
+
+        function Inv:Refresh()
+            Inv_Refresh_base(self)
+            Inv:LoadExtraSlots(self)
+        end
+
+        function Inv:Rebuild()
+            Inv_Rebuild_base(self)
+            Inv:LoadExtraSlots(self)
+        end
+    end
+    AddGlobalClassPostConstruct("widgets/inventorybar", "Inv", PostConstruct)
+
     -- 看不懂 大概意思就是说进入游戏后先获取原来人物的物品 比如你本来是6格 会把多余的物品给你卸下来
-    AddPrefabPostInit(
-        "inventory_classified",
-        function(inst)
-            function GetOverflowContainer(inst)
-                local item = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BACK)
-                return item ~= nil and item.replica.container or nil
-            end
-
-            function Count(item)
-                return item.replica.stackable ~= nil and item.replica.stackable:StackSize() or 1
-            end
-
-            function Has(inst, prefab, amount)
-                local count =
-                    inst._activeitem ~= nil and inst._activeitem.prefab == prefab and Count(inst._activeitem) or 0
-
-                if inst._itemspreview ~= nil then
-                    for i, v in ipairs(inst._items) do
-                        local item = inst._itemspreview[i]
-                        if item ~= nil and item.prefab == prefab then
-                            count = count + Count(item)
-                        end
-                    end
-                else
-                    for i, v in ipairs(inst._items) do
-                        local item = v:value()
-                        if item ~= nil and item ~= inst._activeitem and item.prefab == prefab then
-                            count = count + Count(item)
-                        end
-                    end
-                end
-
-                local overflow = GetOverflowContainer(inst)
-                if overflow ~= nil then
-                    local overflowhas, overflowcount = overflow:Has(prefab, amount)
-                    count = count + overflowcount
-                end
-
-                return count >= amount, count
-            end
-
-            if not IsServer then
-                inst.GetOverflowContainer = GetOverflowContainer
-                inst.Has = Has
-            end
+    local function PrefabPostInit(inst)
+        function GetOverflowContainer(inst)
+            local item = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BACK)
+            return item ~= nil and item.replica.container or nil
         end
-    )
+
+        function Count(item)
+            return item.replica.stackable ~= nil and item.replica.stackable:StackSize() or 1
+        end
+
+        function Has(inst, prefab, amount)
+            local count = inst._activeitem ~= nil and inst._activeitem.prefab == prefab and Count(inst._activeitem) or 0
+
+            if inst._itemspreview ~= nil then
+                for i, v in ipairs(inst._items) do
+                    local item = inst._itemspreview[i]
+                    if item ~= nil and item.prefab == prefab then
+                        count = count + Count(item)
+                    end
+                end
+            else
+                for i, v in ipairs(inst._items) do
+                    local item = v:value()
+                    if item ~= nil and item ~= inst._activeitem and item.prefab == prefab then
+                        count = count + Count(item)
+                    end
+                end
+            end
+
+            local overflow = GetOverflowContainer(inst)
+            if overflow ~= nil then
+                local overflowhas, overflowcount = overflow:Has(prefab, amount)
+                count = count + overflowcount
+            end
+
+            return count >= amount, count
+        end
+
+        if not IsServer then
+            inst.GetOverflowContainer = GetOverflowContainer
+            inst.Has = Has
+        end
+    end
+    AddPrefabPostInit("inventory_classified", PrefabPostInit)
 end
 InitSlot()
 
@@ -247,28 +254,27 @@ local function InitPrefab()
         end
 
         -- 为其他物品智能分配插槽
-        AddPrefabPostInitAny(
-            function(inst)
-                if not (GLOBAL.TheWorld.ismastersim and inst.components.equippable ~= nil) then
-                    return
-                end
+        AddPrefabPostInitAny(function(inst)
+            if not (GLOBAL.TheWorld.ismastersim and inst.components.equippable ~= nil) then
+                return
+            end
 
-                -- 除身体部分物品外 其余的物品不判断
-                local equipslot = inst.components.equippable.equipslot or nil
-                if equipslot == nil or equipslot ~= "body" then
-                end
+            -- 除身体部分物品外 其余的物品不判断
+            local equipslot = inst.components.equippable.equipslot or nil
+            if equipslot == nil or equipslot ~= "body" then
+            end
 
-                local prefab = inst.prefab -- 物品名称
+            local prefab = inst.prefab -- 物品名称
 
-                -- 护甲类优先不进行调整
-                local is_armor = string.find(prefab, "armor") -- 是否为护甲
-                -- 如果是护甲则不进行分配
-                if is_armor ~= nil then
-                    return
-                end
+            -- 护甲类优先不进行调整
+            local is_armor = string.find(prefab, "armor") -- 是否为护甲
+            -- 如果是护甲则不进行分配
+            if is_armor ~= nil then
+                return
+            end
 
-                -- 自动分配服装栏
-                if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
+            -- 自动分配服装栏
+            if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
                 -- 自动匹配腹部上的物品 暂时不支持
                 -- local function AutoMatchBelly()
                 --     local is_amulet = string.find(prefab, "amulet") -- 是否为护符
@@ -277,33 +283,32 @@ local function InitPrefab()
                 --     end
                 -- end
                 -- AutoMatchBelly()
-                end
-
-                -- 自动分配护符栏
-                if GLOBAL.EQUIPSLOTS.NECK and AUTO_SLOTS_NECK then
-                    -- 自动匹配脖子上的物品
-                    local function AutoMatchNeck()
-                        local is_amulet = string.find(prefab, "amulet") -- 是否为护符
-                        if is_amulet then
-                            inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK
-                        end
-                    end
-                    AutoMatchNeck()
-                end
-
-                -- 自动分配背包栏
-                if GLOBAL.EQUIPSLOTS.BACK and AUTO_SLOTS_BACK then
-                    -- 自动匹配背上的物品
-                    local function AutoMatchBack()
-                        local is_back = string.find(prefab, "back") -- 是否为背上物品
-                        if is_back then
-                            inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK
-                        end
-                    end
-                    AutoMatchBack()
-                end
             end
-        )
+
+            -- 自动分配护符栏
+            if GLOBAL.EQUIPSLOTS.NECK and AUTO_SLOTS_NECK then
+                -- 自动匹配脖子上的物品
+                local function AutoMatchNeck()
+                    local is_amulet = string.find(prefab, "amulet") -- 是否为护符
+                    if is_amulet then
+                        inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK
+                    end
+                end
+                AutoMatchNeck()
+            end
+
+            -- 自动分配背包栏
+            if GLOBAL.EQUIPSLOTS.BACK and AUTO_SLOTS_BACK then
+                -- 自动匹配背上的物品
+                local function AutoMatchBack()
+                    local is_back = string.find(prefab, "back") -- 是否为背上物品
+                    if is_back then
+                        inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK
+                    end
+                end
+                AutoMatchBack()
+            end
+        end)
     end
 end
 InitPrefab()
@@ -327,60 +332,59 @@ local function RepairExtra()
         end
 
         -- 红护符复活
-        AddStategraphPostInit(
-            "wilson",
-            function(self)
-                local original_amulet_rebirth = self.states["amulet_rebirth"]
-                local original_amulet_rebirth_onexit = original_amulet_rebirth.onexit
-                original_amulet_rebirth.onexit = function(inst)
-                    local item = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.NECK)
-                    if item and item.prefab == "amulet" then
-                        item = inst.components.inventory:RemoveItem(item)
-                        if item then
-                            item:Remove()
-                            item.persists = false
-                        end
+        AddStategraphPostInit("wilson", function(self)
+            local original_amulet_rebirth = self.states["amulet_rebirth"]
+            local original_amulet_rebirth_onexit = original_amulet_rebirth.onexit
+            original_amulet_rebirth.onexit = function(inst)
+                local item = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.NECK)
+                if item and item.prefab == "amulet" then
+                    item = inst.components.inventory:RemoveItem(item)
+                    if item then
+                        item:Remove()
+                        item.persists = false
                     end
-                    original_amulet_rebirth_onexit(inst)
                 end
+                original_amulet_rebirth_onexit(inst)
             end
-        )
+        end)
     end
 
     -- 开启背包栏后的修复
     if GLOBAL.EQUIPSLOTS.BACK then
         -- 对人物物品变化添加额外的事件
-        AddComponentPostInit(
-            "inventory",
-            function(self, inst)
-                local original_Equip = self.Equip
-                -- 这个是装备背包的方法
-                self.Equip = function(self, item, old_to_active)
-                    if
-                        original_Equip(self, item, old_to_active) and item and item.components and
-                            item.components.equippable
-                     then
-                        local eslot = item.components.equippable.equipslot
-                        if self.equipslots[eslot] ~= item then
-                            if eslot == GLOBAL.EQUIPSLOTS.BACK and item.components.container ~= nil then
-                                self.inst:PushEvent("setoverflow", {overflow = item})
-                            end
+        AddComponentPostInit("inventory", function(self, inst)
+            local original_Equip = self.Equip
+            -- 这个是装备背包的方法
+            self.Equip = function(self, item, old_to_active)
+                if original_Equip(self, item, old_to_active) and item and item.components and item.components.equippable then
+                    local eslot = item.components.equippable.equipslot
+                    if self.equipslots[eslot] ~= item then
+                        if eslot == GLOBAL.EQUIPSLOTS.BACK and item.components.container ~= nil then
+                            self.inst:PushEvent("setoverflow", {
+                                overflow = item
+                            })
                         end
-                        return true
-                    else
-                        return
                     end
-                end
-                -- 这个应该就是捡东西了
-                self.GetOverflowContainer = function()
-                    if self.ignoreoverflow then
-                        return
-                    end
-                    local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
-                    return item ~= nil and item.components.container or nil
+                    return true
+                else
+                    return
                 end
             end
-        )
+            -- 这个应该就是捡东西了
+            self.GetOverflowContainer = function()
+                -- if self.ignoreoverflow then
+                --     return
+                -- end
+                -- local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                -- return item ~= nil and item.components.container or nil
+                if self.ignoreoverflow then
+                    return
+                end
+                local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                return (item ~= nil and item.components.container ~= nil and item.components.container.canbeopened) and
+                           item.components.container or nil
+            end
+        end)
     end
 end
 RepairExtra()
