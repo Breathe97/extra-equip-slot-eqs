@@ -44,7 +44,7 @@ local function InitSlot()
             return ""
         end
 
-        function Inv:LoadExtraSlots(self)
+        function Inv:RebuildExtraSlots(self)
             -- See `scripts/widgets/inventorybar.lua:212-217`.
             local W = 68 -- 格子宽度
             local SEP = 12 -- 格子间隙
@@ -73,11 +73,7 @@ local function InitSlot()
             local total_w_real = CalcTotalWidth(num_slots, num_equip, do_self_inspect and 1 or 0) -- 现在的宽度
             local scale_real = scale_default / (total_w_default / total_w_real) -- 稍微改了下 我有强迫症 我想把 total_w_default 放中间
 
-            self.bg:SetScale(scale_real, 1, 1)
-            self.bgcover:SetScale(scale_real, 1, 1)
-
-            local more_lost_num = num_equip - 3 -- 额外增加的格子数量
-
+            -- 添加额外格子
             if self.addextraslots == nil then
                 self.addextraslots = 1
                 if GLOBAL.EQUIPSLOTS.BELLY ~= nil then
@@ -90,21 +86,34 @@ local function InitSlot()
                     self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "images/equip_slots.xml", "back.tex")
                 end
             end
+
+            local more_lost_num = 0 -- 额外增加的格子数量
+            if GLOBAL.EQUIPSLOTS.BELLY ~= nil then
+                more_lost_num = more_lost_num + 1
+            end
+            if GLOBAL.EQUIPSLOTS.NECK ~= nil then
+                more_lost_num = more_lost_num + 1
+            end
+            if GLOBAL.EQUIPSLOTS.BACK ~= nil then
+                more_lost_num = more_lost_num + 1
+            end
             -- 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
-            if GLOBAL.EQUIPSLOTS.BACK ~= nil and more_lost_num > 0 then
-                local offset_x = ((W + SEP) / 2) * (more_lost_num + 1) -- 偏移值(为啥要 / 2 不知道 )
+            if GLOBAL.EQUIPSLOTS.BACK ~= nil and more_lost_num > 0 and self.integrated_arrow then
+                local offset_x = (W + SEP) * (more_lost_num + 1) -- 偏移值
                 self.integrated_arrow:Nudge(Point(offset_x, 0, 0))
             end
-        end
-
-        function Inv:Refresh()
-            Inv_Refresh_base(self)
-            Inv:LoadExtraSlots(self)
+            -- 修正贴图
+            self.bg:SetScale(scale_real, 1, 1)
+            self.bgcover:SetScale(scale_real, 1, 1)
         end
 
         function Inv:Rebuild()
             Inv_Rebuild_base(self)
-            Inv:LoadExtraSlots(self)
+            Inv:RebuildExtraSlots(self)
+        end
+
+        function Inv:Refresh()
+            Inv_Refresh_base(self)
         end
     end
     AddGlobalClassPostConstruct("widgets/inventorybar", "Inv", PostConstruct)
