@@ -11,29 +11,29 @@ description =
 󰀜 其他模组的适配可以留言（物品的英文+中文+模组的名称）。
 
 󰀏 近期更新：
+1.1.9：修复有时候不能从箱子制作的问题。
 1.1.8：对融合式背包栏箭头进行调整。
 1.1.5：尝试修复部分客户端背包物品不能正常识别和拾取。
 1.1.4：兼容了海难的服装类物品。
-1.1.0：新增智能护符栏选项，自动匹配原身体物品是否属于护符栏。
 
 󰀀 图标也抄过来了 嘻嘻。
                     󰀜󰀝󰀀󰀞󰀘󰀁󰀟󰀠󰀡󰀂󰀪󰀕󰀫󰀖󰀛󰀬󰀭󰀮󰀰󰀉󰀚󰀊󰀋󰀌󰀍
                     󰀃󰀄󰀢󰀅󰀣󰀆󰀇󰀈󰀤󰀙󰀦󰀐󰀑󰀒󰀧󰀱󰀎󰀏󰀗󰀯󰀔󰀩󰀨󰀓󰀥
 ]]
 
-priority = -1 -- 优先级 默认0
+priority = 100 -- 优先级 默认0
 
 author = "Breathe" -- mod的作者
 
-version = "1.1.8" -- mod的版本号
+version = "1.1.9" -- mod的版本号
 
 api_version = 10 -- API版本号
 
 forumthread = "" -- 留空就行了
 
 dst_compatible = true -- 兼容联机
-dont_starve_compatible = true -- 兼容单机
-reign_of_giants_compatible = true -- 兼容巨人
+dont_starve_compatible = false -- 兼容单机
+reign_of_giants_compatible = false -- 兼容巨人
 
 all_clients_require_mod = true -- 客户端mod就false,服务端就true。
 
