@@ -118,10 +118,13 @@ local function InitSlot()
     end
     AddGlobalClassPostConstruct("widgets/inventorybar", "Inv", PostConstruct)
 
-    -- 看不懂 大概意思就是说进入游戏后先获取原来人物的物品 比如你本来是6格 会把多余的物品给你卸下来
+    -- 看不懂 大概意思就是 声明怎么获取当前人物的物品以及数量、后期怎么堆叠什么的
     local function PrefabPostInit(inst)
         function GetOverflowContainer(inst)
-            local item = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BODY)
+            if inst.ignoreoverflow then
+                return
+            end
+            local item = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BODY or GLOBAL.EQUIPSLOTS.BACK)
             return item ~= nil and item.replica.container or nil
         end
 
@@ -400,7 +403,7 @@ local function RepairExtra()
                 if self.ignoreoverflow then
                     return
                 end
-                local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BODY)
+                local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY or GLOBAL.EQUIPSLOTS.BACK)
                 return (item ~= nil and item.components.container ~= nil and item.components.container.canbeopened) and item.components.container or nil
             end
         end)
