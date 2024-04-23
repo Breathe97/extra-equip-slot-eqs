@@ -170,7 +170,6 @@ local function InitSlot()
                 end
             end
 
-
             return count >= amount, count
         end
 
@@ -402,8 +401,7 @@ local function RepairExtra()
                     return
                 end
                 local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BODY)
-                return (item ~= nil and item.components.container ~= nil and item.components.container.canbeopened) and
-                           item.components.container or nil
+                return (item ~= nil and item.components.container ~= nil and item.components.container.canbeopened) and item.components.container or nil
             end
         end)
     end
