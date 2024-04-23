@@ -118,66 +118,6 @@ local function InitSlot()
     end
     AddGlobalClassPostConstruct("widgets/inventorybar", "Inv", PostConstruct)
 
-    -- 看不懂 大概意思就是 声明怎么获取当前人物的物品以及数量、后期怎么堆叠什么的
-    -- 这里参考了该作者的源码 https://steamcommunity.com/sharedfiles/filedetails/?id=1819567085 解决了物品放置的问题
-    local function PrefabPostInit(inst)
-        local function GetOverflowContainer(inst)
-            if inst.ignoreoverflow then
-                return
-            end
-
-            local backitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BACK)
-            local bodyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BODY)
-            if backitem ~= nil and backitem.replica and backitem.replica.container then
-                return backitem.replica.container
-            elseif bodyitem ~= nil and bodyitem.replica and bodyitem.replica.container then
-                return bodyitem.replica.container
-            end
-        end
-
-        -- 定义相关的方法然后遍历修改
-        local funclist = {
-            "Has",
-            "UseItemFromInvTile",
-            "ControllerUseItemOnItemFromInvTile",
-            "ControllerUseItemOnSelfFromInvTile",
-            "ControllerUseItemOnSceneFromInvTile",
-            "ReceiveItem",
-            "RemoveIngredients"
-        }
-        
-        -- 修改指定的方法中的GetOverflowContainer
-        local function setval(fn, path, new)
-            local val = fn
-            local prev = nil
-            local i
-            for entry in path:gmatch("[^%.]+") do
-                i = 1
-                prev = val
-                while true do
-                    local name, value = GLOBAL.debug.getupvalue(val, i)
-                    if name == entry then
-                        val = value
-                        break
-                    elseif name == nil then
-                        return
-                    end
-                    i = i + 1
-                end
-            end
-            GLOBAL.debug.setupvalue(prev, i, new)
-        end
-        for _, v in ipairs(funclist) do
-            if inst[v] and type(inst[v]) == "function" then
-                setval(inst[v], "GetOverflowContainer", GetOverflowContainer)
-            end
-        end
-
-        if not IsServer then
-            inst.GetOverflowContainer = GetOverflowContainer
-        end
-    end
-    AddPrefabPostInit("inventory_classified", PrefabPostInit)
 end
 InitSlot()
 
@@ -375,6 +315,67 @@ local function RepairExtra()
 
     -- 开启背包栏后的修复
     if GLOBAL.EQUIPSLOTS.BACK then
+        -- 看不懂 大概意思就是 声明怎么获取当前人物的物品以及数量、后期怎么堆叠什么的
+        -- 这里参考了该作者的源码 https://steamcommunity.com/sharedfiles/filedetails/?id=1819567085 解决了物品放置的问题
+        local function PrefabPostInit(inst)
+            local function GetOverflowContainer(inst)
+                if inst.ignoreoverflow then
+                    return
+                end
+
+                local backitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BACK)
+                local bodyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BODY)
+                if backitem ~= nil and backitem.replica and backitem.replica.container then
+                    return backitem.replica.container
+                elseif bodyitem ~= nil and bodyitem.replica and bodyitem.replica.container then
+                    return bodyitem.replica.container
+                end
+            end
+
+            -- 定义相关的方法然后遍历修改
+            local funclist = {
+                "Has",
+                "UseItemFromInvTile",
+                "ControllerUseItemOnItemFromInvTile",
+                "ControllerUseItemOnSelfFromInvTile",
+                "ControllerUseItemOnSceneFromInvTile",
+                "ReceiveItem",
+                "RemoveIngredients"
+            }
+            
+            -- 修改指定的方法中的GetOverflowContainer
+            local function setval(fn, path, new)
+                local val = fn
+                local prev = nil
+                local i
+                for entry in path:gmatch("[^%.]+") do
+                    i = 1
+                    prev = val
+                    while true do
+                        local name, value = GLOBAL.debug.getupvalue(val, i)
+                        if name == entry then
+                            val = value
+                            break
+                        elseif name == nil then
+                            return
+                        end
+                        i = i + 1
+                    end
+                end
+                GLOBAL.debug.setupvalue(prev, i, new)
+            end
+            for _, v in ipairs(funclist) do
+                if inst[v] and type(inst[v]) == "function" then
+                    setval(inst[v], "GetOverflowContainer", GetOverflowContainer)
+                end
+            end
+
+            if not IsServer then
+                inst.GetOverflowContainer = GetOverflowContainer
+            end
+        end
+        AddPrefabPostInit("inventory_classified", PrefabPostInit)
+
         -- 对人物物品变化添加额外的事件
         AddComponentPostInit("inventory", function(self, inst)
             local original_Equip = self.Equip
