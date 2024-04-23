@@ -129,7 +129,7 @@ local function InitSlot()
             return item.replica.stackable ~= nil and item.replica.stackable:StackSize() or 1
         end
 
-        function Has(inst, prefab, amount)
+        function Has(inst, prefab, amount, checkallcontainers)
             local count = inst._activeitem ~= nil and inst._activeitem.prefab == prefab and Count(inst._activeitem) or 0
 
             if inst._itemspreview ~= nil then
@@ -153,6 +153,23 @@ local function InitSlot()
                 local overflowhas, overflowcount = overflow:Has(prefab, amount)
                 count = count + overflowcount
             end
+
+            -- 修改材料在箱子不能正确制作的问题 参考 https://steamcommunity.com/sharedfiles/filedetails/?id=2820470515
+            if checkallcontainers then
+                local inventory_replica = inst and inst._parent and inst._parent.replica.inventory
+                local containers = inventory_replica and inventory_replica:GetOpenContainers()
+    
+                if containers then
+                    for container_inst in pairs(containers) do
+                        local container = container_inst.replica.container or container_inst.replica.inventory
+                        if container and container ~= overflow and not container.excludefromcrafting then
+                            local containerhas, containercount = container:Has(prefab, amount)
+                            count = count + containercount
+                        end
+                    end
+                end
+            end
+
 
             return count >= amount, count
         end
@@ -381,11 +398,6 @@ local function RepairExtra()
             end
             -- 这个应该就是捡东西了
             self.GetOverflowContainer = function()
-                -- if self.ignoreoverflow then
-                --     return
-                -- end
-                -- local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
-                -- return item ~= nil and item.components.container or nil
                 if self.ignoreoverflow then
                     return
                 end
