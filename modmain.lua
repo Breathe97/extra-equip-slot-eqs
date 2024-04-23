@@ -121,7 +121,7 @@ local function InitSlot()
     -- 看不懂 大概意思就是说进入游戏后先获取原来人物的物品 比如你本来是6格 会把多余的物品给你卸下来
     local function PrefabPostInit(inst)
         function GetOverflowContainer(inst)
-            local item = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BACK)
+            local item = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BODY)
             return item ~= nil and item.replica.container or nil
         end
 
@@ -401,7 +401,7 @@ local function RepairExtra()
                 if self.ignoreoverflow then
                     return
                 end
-                local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BODY)
                 return (item ~= nil and item.components.container ~= nil and item.components.container.canbeopened) and
                            item.components.container or nil
             end
