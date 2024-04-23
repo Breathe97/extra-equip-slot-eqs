@@ -124,7 +124,7 @@ local function InitSlot()
             if inst.ignoreoverflow then
                 return
             end
-            local item = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BODY or GLOBAL.EQUIPSLOTS.BACK)
+            local item = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BODY)
             return item ~= nil and item.replica.container or nil
         end
 
@@ -172,7 +172,7 @@ local function InitSlot()
                     end
                 end
             end
-
+            
             return count >= amount, count
         end
 
@@ -398,13 +398,26 @@ local function RepairExtra()
                     return
                 end
             end
-            -- 这个应该就是捡东西了
+            -- 调整物品叠加到背包时的逻辑
             self.GetOverflowContainer = function()
                 if self.ignoreoverflow then
-                    return
-                end
-                local item = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY or GLOBAL.EQUIPSLOTS.BACK)
-                return (item ~= nil and item.components.container ~= nil and item.components.container.canbeopened) and item.components.container or nil
+					return
+				end
+
+                -- 是否打开了容器
+                local function isOpencontainer(doer, inst)
+					return doer.components.inventory.opencontainers[inst]
+				end
+
+				local backitem = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+				local bodyitem = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY)
+
+                -- 对背包做限制 防止打开冰箱时优先使用背包 但是如果要强行把冰箱放进其他容器会优先转到身上 身上格子不够再到背包
+				if backitem ~= nil and backitem.components.container and isOpencontainer(self.inst, backitem) then
+					return backitem.components.container
+				elseif bodyitem ~= nil and bodyitem.components.container then
+					return bodyitem.components.container
+				end
             end
         end)
     end
