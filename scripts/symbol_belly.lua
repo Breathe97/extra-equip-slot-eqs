@@ -36,5 +36,7 @@ return {
     veneto_yifu = "veneto_yifu", -- 战舰少女维内托-小时候的衣服
     dress_sea = "dress_sea", -- 希儿-幻海梦蝶
     seele_swimsuit = "seele_swimsuit", -- 希儿-夏雪铃兰
+    lg_fufeng = "lg_fufeng", -- 海洋传说-雨花·扶风
+    krm_uniform = "krm_uniform", -- 狂三-校服
     zhifu = "zhifu" -- 战舰少女补给包-秋冬制服
 }
