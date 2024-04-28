@@ -279,6 +279,75 @@ InitPrefab()
 
 -- 因为部分物品调整装备栏带来的修复
 local function RepairExtra()
+
+    -- 看不懂 大概意思就是 声明怎么获取当前人物的物品以及数量、后期怎么堆叠什么的
+    -- 这里参考了该作者的源码 https://steamcommunity.com/sharedfiles/filedetails/?id=1819567085 解决了物品放置的问题
+    local function PrefabPostInit(inst)
+        local function GetOverflowContainer(inst)
+            if inst.ignoreoverflow then
+                return
+            end
+
+            local backitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BACK)
+            local bodyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BODY)
+            local headitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.HEAD)
+            local bellyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BELLY)
+
+            if backitem ~= nil and backitem.replica and backitem.replica.container and backitem.replica.container._isopen then
+                return backitem.replica.container
+            elseif bodyitem ~= nil and bodyitem.replica and bodyitem.replica.container and bodyitem.replica.container._isopen then
+                return bodyitem.replica.container
+            elseif headitem ~= nil and headitem.replica and headitem.replica.container and headitem.replica.container._isopen then
+                return headitem.replica.container
+            elseif bellyitem ~= nil and bellyitem.replica and bellyitem.replica.container and bellyitem.replica.container._isopen then
+                return bellyitem.replica.container
+            end
+        end
+
+        -- 定义相关的方法然后遍历修改
+        local funclist = {
+            "Has",
+            "UseItemFromInvTile",
+            "ControllerUseItemOnItemFromInvTile",
+            "ControllerUseItemOnSelfFromInvTile",
+            "ControllerUseItemOnSceneFromInvTile",
+            "ReceiveItem",
+            "RemoveIngredients"
+        }
+        
+        -- 修改指定的方法中的GetOverflowContainer
+        local function setval(fn, path, new)
+            local val = fn
+            local prev = nil
+            local i
+            for entry in path:gmatch("[^%.]+") do
+                i = 1
+                prev = val
+                while true do
+                    local name, value = GLOBAL.debug.getupvalue(val, i)
+                    if name == entry then
+                        val = value
+                        break
+                    elseif name == nil then
+                        return
+                    end
+                    i = i + 1
+                end
+            end
+            GLOBAL.debug.setupvalue(prev, i, new)
+        end
+        for _, v in ipairs(funclist) do
+            if inst[v] and type(inst[v]) == "function" then
+                setval(inst[v], "GetOverflowContainer", GetOverflowContainer)
+            end
+        end
+
+        if not IsServer and not GLOBAL.TheWorld.ismastersim then
+            inst.GetOverflowContainer = GetOverflowContainer
+        end
+    end
+    AddPrefabPostInit("inventory_classified", PrefabPostInit)
+
     -- 开启护符栏后的修复
     if GLOBAL.EQUIPSLOTS.NECK then
         -- 绿护符在制作栏中显示-20%
@@ -315,67 +384,6 @@ local function RepairExtra()
 
     -- 开启背包栏后的修复
     if GLOBAL.EQUIPSLOTS.BACK then
-        -- 看不懂 大概意思就是 声明怎么获取当前人物的物品以及数量、后期怎么堆叠什么的
-        -- 这里参考了该作者的源码 https://steamcommunity.com/sharedfiles/filedetails/?id=1819567085 解决了物品放置的问题
-        local function PrefabPostInit(inst)
-            local function GetOverflowContainer(inst)
-                if inst.ignoreoverflow then
-                    return
-                end
-
-                local backitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BACK)
-                local bodyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BODY)
-
-				if backitem ~= nil and backitem.replica and backitem.replica.container and backitem.replica.container._isopen then
-					return backitem.replica.container
-				elseif bodyitem ~= nil and bodyitem.replica and bodyitem.replica.container and bodyitem.replica.container._isopen then
-					return bodyitem.replica.container
-				end
-            end
-
-            -- 定义相关的方法然后遍历修改
-            local funclist = {
-                "Has",
-                "UseItemFromInvTile",
-                "ControllerUseItemOnItemFromInvTile",
-                "ControllerUseItemOnSelfFromInvTile",
-                "ControllerUseItemOnSceneFromInvTile",
-                "ReceiveItem",
-                "RemoveIngredients"
-            }
-            
-            -- 修改指定的方法中的GetOverflowContainer
-            local function setval(fn, path, new)
-                local val = fn
-                local prev = nil
-                local i
-                for entry in path:gmatch("[^%.]+") do
-                    i = 1
-                    prev = val
-                    while true do
-                        local name, value = GLOBAL.debug.getupvalue(val, i)
-                        if name == entry then
-                            val = value
-                            break
-                        elseif name == nil then
-                            return
-                        end
-                        i = i + 1
-                    end
-                end
-                GLOBAL.debug.setupvalue(prev, i, new)
-            end
-            for _, v in ipairs(funclist) do
-                if inst[v] and type(inst[v]) == "function" then
-                    setval(inst[v], "GetOverflowContainer", GetOverflowContainer)
-                end
-            end
-
-			if not IsServer and not GLOBAL.TheWorld.ismastersim then
-				inst.GetOverflowContainer = GetOverflowContainer
-			end
-        end
-        AddPrefabPostInit("inventory_classified", PrefabPostInit)
 
         -- 对人物物品变化添加额外的事件
         AddComponentPostInit("inventory", function(self, inst)
