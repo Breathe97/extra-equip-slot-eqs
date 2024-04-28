@@ -325,11 +325,12 @@ local function RepairExtra()
 
                 local backitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BACK)
                 local bodyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BODY)
-                if backitem ~= nil and backitem.replica and backitem.replica.container then
-                    return backitem.replica.container
-                elseif bodyitem ~= nil and bodyitem.replica and bodyitem.replica.container then
-                    return bodyitem.replica.container
-                end
+
+				if backitem ~= nil and backitem.replica and backitem.replica.container and backitem.replica.container._isopen then
+					return backitem.replica.container
+				elseif bodyitem ~= nil and bodyitem.replica and bodyitem.replica.container and bodyitem.replica.container._isopen then
+					return bodyitem.replica.container
+				end
             end
 
             -- 定义相关的方法然后遍历修改
@@ -370,9 +371,9 @@ local function RepairExtra()
                 end
             end
 
-            if not IsServer then
-                inst.GetOverflowContainer = GetOverflowContainer
-            end
+			if not IsServer and not GLOBAL.TheWorld.ismastersim then
+				inst.GetOverflowContainer = GetOverflowContainer
+			end
         end
         AddPrefabPostInit("inventory_classified", PrefabPostInit)
 
@@ -385,9 +386,7 @@ local function RepairExtra()
                     local eslot = item.components.equippable.equipslot
                     if self.equipslots[eslot] ~= item then
                         if eslot == GLOBAL.EQUIPSLOTS.BACK and item.components.container ~= nil then
-                            self.inst:PushEvent("setoverflow", {
-                                overflow = item
-                            })
+                            self.inst:PushEvent("setoverflow", { overflow = item })
                         end
                     end
                     return true
@@ -395,17 +394,37 @@ local function RepairExtra()
                     return
                 end
             end
+            -- 监听背包卸载
+            self.inst:ListenForEvent(
+                "unequip",
+                function(inst, data)
+                    local inventory = DST and inst.replica.inventory or inst.components.inventory
+                    if inventory ~= nil then
+                        local equipment = inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                        if equipment and equipment.components.equippable.onequipfn then
+                            if equipment.task ~= nil then
+                                equipment.task:Cancel()
+                                equipment.task = nil
+                            end
+                            equipment.components.equippable.onequipfn(equipment, inst)
+                        end
+                    end
+                end
+            )
 
             -- 调整物品叠加到背包时的逻辑
 			self.GetOverflowContainer = function()
+                if self.ignoreoverflow then
+                    return
+                end
+
 				local function isOpencontainers(doer, inst)
 					return doer.components.inventory.opencontainers[inst]
 				end
-				if self.ignoreoverflow then
-					return
-				end
+
 				local backitem = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
 				local bodyitem = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY)
+
 				if backitem ~= nil and backitem.components.container and isOpencontainers(self.inst, backitem) then
 					return backitem.components.container
 				elseif bodyitem ~= nil and bodyitem.components.container and isOpencontainers(self.inst, bodyitem) then
