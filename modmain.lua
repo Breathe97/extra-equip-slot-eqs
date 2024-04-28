@@ -240,13 +240,13 @@ local function InitPrefab()
             -- 自动分配服装栏
             if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
                 -- 自动匹配腹部上的物品 暂时不支持
-                -- local function AutoMatchBelly()
-                --     local is_amulet = string.find(prefab, "amulet") -- 是否为护符
-                --     if is_amulet then
-                --         inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
-                --     end
-                -- end
-                -- AutoMatchBelly()
+                local function AutoMatchBelly()
+                    local is_clothing = string.find(prefab, "clothing") -- 是否为护符
+                    if is_clothing then
+                        inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
+                    end
+                end
+                AutoMatchBelly()
             end
 
             -- 自动分配护符栏
