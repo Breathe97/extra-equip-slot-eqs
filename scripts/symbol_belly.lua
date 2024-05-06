@@ -38,5 +38,8 @@ return {
     seele_swimsuit = "seele_swimsuit", -- 希儿-夏雪铃兰
     lg_fufeng = "lg_fufeng", -- 海洋传说-雨花·扶风
     krm_uniform = "krm_uniform", -- 狂三-校服
+    to_school = "to_school", -- 鸢一折纸-校服
+    -- to_angel = "to_angel", -- 鸢一折纸-绝灭天使 有兼容问题
+    -- to_satan = "to_satan", -- 鸢一折纸-救世魔王 有兼容问题
     zhifu = "zhifu" -- 战舰少女补给包-秋冬制服
 }
