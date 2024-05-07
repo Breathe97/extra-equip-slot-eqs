@@ -76,26 +76,25 @@ local function InitSlot()
             local scale_real = scale_default / (total_w_default / total_w_real) -- 稍微改了下 我有强迫症 我想把 total_w_default 放中间
 
             -- 添加额外格子
-            local more_lost_num = 0 -- 额外增加的格子数量
-            if more_lost_num == 0 then
-                more_lost_num = num_slots -- 生成新插槽id
+            if self.addextraslots == nil then
+                self.addextraslots = num_slots -- 额外增加的格子数量
                 if GLOBAL.EQUIPSLOTS.BELLY ~= nil then
-                    more_lost_num = more_lost_num + 1
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BELLY, "images/equip_slots.xml", "belly.tex", more_lost_num)
+                    self.addextraslots = self.addextraslots + 1
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BELLY, "images/equip_slots.xml", "belly.tex", self.addextraslots)
                 end
                 if GLOBAL.EQUIPSLOTS.NECK ~= nil then
-                    more_lost_num = more_lost_num + 1
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.NECK, "images/equip_slots.xml", "neck.tex", more_lost_num)
+                    self.addextraslots = self.addextraslots + 1
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.NECK, "images/equip_slots.xml", "neck.tex", self.addextraslots)
                 end
                 if GLOBAL.EQUIPSLOTS.BACK ~= nil then
-                    more_lost_num = more_lost_num + 1
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "images/equip_slots.xml", "back.tex", more_lost_num)
+                    self.addextraslots = self.addextraslots + 1
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "images/equip_slots.xml", "back.tex", self.addextraslots)
                 end
             end
 
             -- 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
-            if GLOBAL.EQUIPSLOTS.BACK ~= nil and more_lost_num > 0 and self.integrated_arrow then
-                local offset_x = (W + SEP) * (more_lost_num + 1) -- 偏移值
+            if self.addextraslots > num_slots and self.integrated_arrow then
+                local offset_x = (W + SEP) * (self.addextraslots + 1) -- 偏移值
                 self.integrated_arrow:Nudge(Point(offset_x, 0, 0))
             end
             -- 修正贴图
