@@ -12,6 +12,8 @@ local symbol_belly = require("symbol_belly") -- 定义服装栏物品
 local symbol_neck = require("symbol_neck") -- 定义护符栏物品
 local symbol_back = require("symbol_back") -- 定义背包栏物品
 
+local Inv = GLOBAL.require "widgets/inventorybar"
+
 -- 引用图片资源
 Assets = {Asset("IMAGE", "images/equip_slots.tex"), Asset("ATLAS", "images/equip_slots.xml")}
 
@@ -32,11 +34,11 @@ for k, v in pairs(EQUIPSLOTS_MAP) do
         GLOBAL.EQUIPSLOTS[k] = v
     end
 end
+
 -- 初始化插槽数量和位置
 local function InitSlot()
     -- 看不懂 大概意思就是说在原来的装备栏后面添加额外的衣服格子、背包格子、护符格子
     local function PostConstruct()
-        local Inv = GLOBAL.require "widgets/inventorybar"
         local Inv_Refresh_base = Inv.Refresh or function()
             return ""
         end
@@ -75,31 +77,24 @@ local function InitSlot()
 
             -- 添加额外格子
             if self.addextraslots == nil then
-                self.addextraslots = 1
+                self.addextraslots = 0
                 if GLOBAL.EQUIPSLOTS.BELLY ~= nil then
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BELLY, "images/equip_slots.xml", "belly.tex")
+                    self.addextraslots = self.addextraslots + 1
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BELLY, "images/equip_slots.xml", "belly.tex", self.addextraslots)
                 end
                 if GLOBAL.EQUIPSLOTS.NECK ~= nil then
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.NECK, "images/equip_slots.xml", "neck.tex")
+                    self.addextraslots = self.addextraslots + 1
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.NECK, "images/equip_slots.xml", "neck.tex", self.addextraslots)
                 end
                 if GLOBAL.EQUIPSLOTS.BACK ~= nil then
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "images/equip_slots.xml", "back.tex")
+                    self.addextraslots = self.addextraslots + 1
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "images/equip_slots.xml", "back.tex", self.addextraslots)
                 end
             end
 
-            local more_lost_num = 0 -- 额外增加的格子数量
-            if GLOBAL.EQUIPSLOTS.BELLY ~= nil then
-                more_lost_num = more_lost_num + 1
-            end
-            if GLOBAL.EQUIPSLOTS.NECK ~= nil then
-                more_lost_num = more_lost_num + 1
-            end
-            if GLOBAL.EQUIPSLOTS.BACK ~= nil then
-                more_lost_num = more_lost_num + 1
-            end
             -- 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
-            if GLOBAL.EQUIPSLOTS.BACK ~= nil and more_lost_num > 0 and self.integrated_arrow then
-                local offset_x = (W + SEP) * (more_lost_num + 1) -- 偏移值
+            if GLOBAL.EQUIPSLOTS.BACK ~= nil and self.addextraslots > 0 and self.integrated_arrow then
+                local offset_x = (W + SEP) * (self.addextraslots + 1) -- 偏移值
                 self.integrated_arrow:Nudge(Point(offset_x, 0, 0))
             end
             -- 修正贴图
