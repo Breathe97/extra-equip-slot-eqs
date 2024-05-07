@@ -94,7 +94,7 @@ local function InitSlot()
 
             -- 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
             if self.addextraslots > num_slots and self.integrated_arrow then
-                local offset_x = (W + SEP) * (self.addextraslots + 1) -- 偏移值
+                local offset_x = (W + SEP) * (self.addextraslots - num_slots + 1) -- 偏移值
                 self.integrated_arrow:Nudge(Point(offset_x, 0, 0))
             end
             -- 修正贴图
