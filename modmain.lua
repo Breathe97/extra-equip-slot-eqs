@@ -77,29 +77,29 @@ local function InitSlot()
 
             -- 添加额外格子
             if self.addextraslots == nil then
-                self.addextraslots = num_slots -- 额外增加的格子数量
+                self.addextraslots = 1 
                 if GLOBAL.EQUIPSLOTS.BELLY ~= nil then
-                    self.addextraslots = self.addextraslots + 1
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BELLY, "images/equip_slots.xml", "belly.tex", self.addextraslots)
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BELLY, "images/equip_slots.xml", "belly.tex")
                 end
                 if GLOBAL.EQUIPSLOTS.NECK ~= nil then
-                    self.addextraslots = self.addextraslots + 1
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.NECK, "images/equip_slots.xml", "neck.tex", self.addextraslots)
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.NECK, "images/equip_slots.xml", "neck.tex")
                 end
                 if GLOBAL.EQUIPSLOTS.BACK ~= nil then
-                    self.addextraslots = self.addextraslots + 1
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "images/equip_slots.xml", "back.tex", self.addextraslots)
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "images/equip_slots.xml", "back.tex")
                 end
             end
 
-            -- 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
-            if self.addextraslots > num_slots and self.integrated_arrow then
-                local offset_x = (W + SEP) * (self.addextraslots - num_slots + 1) -- 偏移值
-                self.integrated_arrow:Nudge(Point(offset_x, 0, 0))
-            end
             -- 修正贴图
             self.bg:SetScale(scale_real, 1, 1)
             self.bgcover:SetScale(scale_real, 1, 1)
+
+            -- 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
+            if GLOBAL.EQUIPSLOTS.BACK ~= nil and num_equip > 3 and self.integrated_arrow then
+                local x = self.inv[#self.inv]:GetPosition().x + W * 0.5 + INTERSEP + 61 -- 原始位置
+                local offset_x = (W + SEP) * (num_equip - 2) -- 偏移值 原始位置就在第二个格子 所以要总格子数减去2
+                self.integrated_arrow:SetPosition(x + offset_x, 8)
+            end
+            
         end
 
         function Inv:Rebuild()
