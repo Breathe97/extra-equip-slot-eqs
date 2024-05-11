@@ -7,6 +7,7 @@ local SLOTS_BACK = GetModConfigData("SLOTS_BACK")
 local AUTO_SLOTS_BELLY = GetModConfigData("AUTO_SLOTS_BELLY")
 local AUTO_SLOTS_NECK = GetModConfigData("AUTO_SLOTS_NECK")
 local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
+local MOD_HYCS_YHFF = GetModConfigData("MOD_HYCS_YHFF")
 
 local symbol_belly = require("symbol_belly") -- 定义服装栏物品
 local symbol_neck = require("symbol_neck") -- 定义护符栏物品
@@ -129,6 +130,10 @@ local function InitPrefab()
                     inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.BODY
                 end
 
+                if not MOD_HYCS_YHFF then
+                    symbol_belly['lg_fufeng'] = nil
+                end
+                
                 -- 标注服装栏物品
                 for k, v in pairs(symbol_belly) do
                     AddPrefabPostInit(k, InitBelly)
