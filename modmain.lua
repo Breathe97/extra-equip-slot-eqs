@@ -109,6 +109,7 @@ local function InitSlot()
 
         function Inv:Refresh()
             Inv_Refresh_base(self)
+            Inv:RebuildExtraSlots(self)
         end
     end
     AddGlobalClassPostConstruct("widgets/inventorybar", "Inv", PostConstruct)
