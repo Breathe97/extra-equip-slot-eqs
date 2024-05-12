@@ -11,11 +11,10 @@ description =
 󰀜 其他模组的适配可以留言（物品的英文+中文+模组的名称）。
 
 󰀏 近期更新：
-1.4.2：对海洋传说: 雨花·扶风 新增额外配置选项。
+1.4.4：对部分模组新增额外配置选项（推荐保持默认）。
 1.4.0：重写融合背包时箭头的位置逻辑。
 1.3.9：兼容45格装备栏显示异常的问题。
 1.3.8：优化代码逻辑、调整模组加载优先级以兼容其他模组。
-1.3.3：兼容鸢一折纸-校服。
 
 󰀀 图标也抄过来了 嘻嘻。
                     󰀜󰀝󰀀󰀞󰀘󰀁󰀟󰀠󰀡󰀂󰀪󰀕󰀫󰀖󰀛󰀬󰀭󰀮󰀰󰀉󰀚󰀊󰀋󰀌󰀍
@@ -26,7 +25,7 @@ priority = -1 -- 优先级 默认0
 
 author = "Breathe" -- mod的作者
 
-version = "1.4.2" -- mod的版本号
+version = "1.4.4" -- mod的版本号
 
 api_version = 10 -- API版本号
 
@@ -154,7 +153,7 @@ configuration_options = {
         },
         default = true
     },
-    {   name = "", label = "其他配置(推荐默认)", hover = "", options = { { description = "", data = 0 } }, default = 0  },
+    {   name = "", label = "其他模组配置(推荐默认)", hover = "", options = { { description = "", data = 0 } }, default = 0  },
     {   name = "", label = "鸢一折纸", hover = "", options = { { description = "", data = 0 } }, default = 0  },
     {
         name = "MOD_YYZZ_MJTS",
@@ -178,6 +177,25 @@ configuration_options = {
                 description = "否",
                 data = false,
                 hover = "有兼容问题暂不支持开启。"
+            }
+        },
+        default = false
+    },
+    {   name = "", label = "棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0  },
+    {
+        name = "MOD_LJ_ZGF",
+        label = "子圭·釜",
+        hover = "是否识别该物品到额外装备",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "保持该物品装备在原本身体栏。"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "该物品会装备在背包栏，有失平衡，谨慎开启。"
             }
         },
         default = false

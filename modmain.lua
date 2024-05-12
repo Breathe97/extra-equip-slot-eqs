@@ -10,10 +10,12 @@ local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
 local MOD_HYCS_YHFF = GetModConfigData("MOD_HYCS_YHFF")
 local MOD_YYZZ_MJTS = GetModConfigData("MOD_YYZZ_MJTS")
 local MOD_YYZZ_JSMW = GetModConfigData("MOD_YYZZ_JSMW")
+local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
 
 local symbol_belly = require("symbol_belly") -- 定义服装栏物品
 local symbol_neck = require("symbol_neck") -- 定义护符栏物品
 local symbol_back = require("symbol_back") -- 定义背包栏物品
+local force_symbol_body = require("force_symbol_body") -- 定义强制身体栏物品
 
 -- 校准 symbol表 根据设置中生成最终的物品表 后续再根据该表进行装备栏的分配
 local function CalibrationSymBol()
@@ -26,6 +28,10 @@ local function CalibrationSymBol()
     end
     if not MOD_YYZZ_JSMW then
         symbol_belly['to_satan'] = nil
+    end
+    -- 这里就是取true 调整的是 force_symbol_body 表
+    if MOD_LJ_ZGF then
+        force_symbol_body['siving_suit_gold'] = nil
     end
 end
 CalibrationSymBol()
@@ -236,13 +242,22 @@ local function InitPrefab()
                 return
             end
 
-            -- 除身体部分物品外 其余的物品不判断
+            local prefab = inst.prefab -- 物品名称
+
+            -- 一些模组物品会被误以为是额外的装备 但是它实际上应该在身体栏
+            local is_force_symbol_body = force_symbol_body[prefab] -- 是否属于强制身体物品
+            if is_force_symbol_body then
+                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BODY
+                -- inst.components.inventoryitem.cangoincontainer = true
+                -- inst:RemoveTag("backpack")
+                return
+            end
+
+            -- 只要不属于身体的物品就不往下走
             local equipslot = inst.components.equippable.equipslot or nil
             if equipslot == nil or equipslot ~= "body" then
                 return
             end
-
-            local prefab = inst.prefab -- 物品名称
 
             -- 护甲类优先不进行调整
             local is_armor = string.find(prefab, "armor") -- 是否为护甲
