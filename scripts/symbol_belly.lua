@@ -14,6 +14,7 @@ return {
     carnival_vest_a = "carnival_vest_a", -- 叽叽喳喳围巾
     carnival_vest_b = "carnival_vest_b", -- 叽叽喳喳斗篷
     carnival_vest_c = "carnival_vest_c", -- 叽叽喳喳小披肩
+
     -- costume_fool_body = "costume_fool_body", -- 小丑服
     -- costume_doll_body = "costume_doll_body", -- 玩偶服
     -- costume_tree_body = "costume_tree_body", -- 树木服
@@ -21,25 +22,28 @@ return {
     -- costume_queen_body = "costume_queen_body", -- 女王服
     -- costume_mirror_body = "costume_mirror_body", -- 镜子服
     -- costume_blacksmith_body = "costume_blacksmith_body", -- 小丑服
-    -- 单机物品
-    tarsuit = "tarsuit", -- 焦油套装
-    blubbersuit = "blubbersuit", -- 鲸脂套装
-    amor_lifejacket = "amor_lifejacket", -- 救生衣
-    armor_snakeskin = "armor_snakeskin", -- 蛇皮夹克
-    armor_windbreaker = "armor_windbreaker", -- 防风衣
+    
     -- 服装栏 模组物品
     down_filled_coat = "down_filled_coat", -- 能力勋章
-    cassock = "cassock", -- 神话书说
-    kam_lan_cassock = "kam_lan_cassock", -- 神话书说
+    cassock = "cassock", -- 神话书说-袈裟
+    kam_lan_cassock = "kam_lan_cassock", -- 神话书说-锦斓袈裟
     madameweb_armor = "madameweb_armor", -- 神话书说
-    sachet = "sachet", -- 棱镜
+    sachet = "sachet", -- 棱镜-香包
     veneto_yifu = "veneto_yifu", -- 战舰少女维内托-小时候的衣服
     dress_sea = "dress_sea", -- 希儿-幻海梦蝶
     seele_swimsuit = "seele_swimsuit", -- 希儿-夏雪铃兰
     lg_fufeng = "lg_fufeng", -- 海洋传说-雨花·扶风
     krm_uniform = "krm_uniform", -- 狂三-校服
     to_school = "to_school", -- 鸢一折纸-校服
-    -- to_angel = "to_angel", -- 鸢一折纸-绝灭天使 有兼容问题
-    -- to_satan = "to_satan", -- 鸢一折纸-救世魔王 有兼容问题
+    to_angel = "to_angel", -- 鸢一折纸-绝灭天使
+    to_satan = "to_satan", -- 鸢一折纸-救世魔王
+    soraclothes = "soraclothes", -- 小穹-护
+    woolen_sweater = "woolen_sweater", -- 山海秘藏-羊毛衫
+    ccs_skirt1 = "ccs_skirt1", -- 魔法小樱-衣服
+    armor_lifejacket = "armor_lifejacket", -- 岛屿冒险-救生衣
+    tarsuit = "tarsuit", -- 岛屿冒险-焦油套装
+    armor_windbreaker = "armor_windbreaker", -- 岛屿冒险-防风衣
+    blubbersuit = "blubbersuit", -- 岛屿冒险-鲸脂套装
+    armor_snakeskin = "armor_snakeskin", -- 岛屿冒险-蛇皮夹克
     zhifu = "zhifu" -- 战舰少女补给包-秋冬制服
 }

@@ -7,7 +7,10 @@ return {
     candybag = "candybag", -- 糖果袋
     seedpouch = "seedpouch", -- 种子袋
     spicepack = "swap_seasack", -- 厨师袋
-    thatchpack = "swap_thatchpack", -- 茅草包
-    seasack = "swap_seasack", -- 海带背包
-    piratepack = "swap_pirate_booty_bag" -- 海盗箱子
+    
+    --背包栏 模组物品
+    thatchpack = "swap_thatchpack", -- 永不妥协-茅草包
+    seasack = "swap_seasack", -- 永不妥协-海带背包
+    piratepack = "swap_pirate_booty_bag", -- 永不妥协-海盗箱子
+    sludge_sack = "sludge_sack" -- 永不妥协-海泥包
 }

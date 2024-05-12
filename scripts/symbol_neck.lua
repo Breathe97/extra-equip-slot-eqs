@@ -7,22 +7,24 @@ return {
     orangeamulet = "orangeamulet", -- 橙色护符
     yellowamulet = "yellowamulet", -- 黄色护符
     greenamulet = "greenamulet", -- 绿色护符
+    
     -- 护符栏 模组物品
-    brooch1 = "brooch1", -- 伊蕾娜
-    brooch2 = "brooch2", -- 伊蕾娜
-    brooch3 = "brooch3", -- 伊蕾娜
-    brooch4 = "brooch4", -- 伊蕾娜
-    brooch5 = "brooch5", -- 伊蕾娜
-    brooch6 = "brooch6", -- 伊蕾娜
-    brooch7 = "brooch7", -- 伊蕾娜
-    brooch8 = "brooch8", -- 伊蕾娜
-    brooch9 = "brooch9", -- 伊蕾娜
-    moon_brooch = "moon_brooch", -- 伊蕾娜
-    star_brooch = "star_brooch", -- 伊蕾娜
+    brooch1 = "brooch1", -- 伊蕾娜-胸针
+    brooch2 = "brooch2", -- 伊蕾娜-胸针
+    brooch3 = "brooch3", -- 伊蕾娜-胸针
+    brooch4 = "brooch4", -- 伊蕾娜-胸针
+    brooch5 = "brooch5", -- 伊蕾娜-胸针
+    brooch6 = "brooch6", -- 伊蕾娜-胸针
+    brooch7 = "brooch7", -- 伊蕾娜-胸针
+    brooch8 = "brooch8", -- 伊蕾娜-胸针
+    brooch9 = "brooch9", -- 伊蕾娜-胸针
+    brooch24 = "brooch24", -- 伊蕾娜-胸针
+    moon_brooch = "moon_brooch", -- 伊蕾娜-胸针
+    star_brooch = "star_brooch", -- 伊蕾娜-胸针
     sora2amulet = "sora2amulet", -- 小穹
     sorabowknot = "sorabowknot", -- 小穹
     luckamulet = "luckamulet", -- 经济学
     terraprisma = "terraprisma", -- 光棱剑
     wharang_amulet = "wharang_amulet", -- 千年狐
-    ndnr_opalpreciousamulet = "ndnr_opalpreciousamulet" -- 富贵
+    ndnr_opalpreciousamulet = "ndnr_opalpreciousamulet"-- 富贵
 }

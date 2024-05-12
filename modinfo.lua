@@ -11,7 +11,7 @@ description =
 󰀜 其他模组的适配可以留言（物品的英文+中文+模组的名称）。
 
 󰀏 近期更新：
-1.4.1：对海洋传说: 雨花·扶风 新增额外配置选项。
+1.4.2：对海洋传说: 雨花·扶风 新增额外配置选项。
 1.4.0：重写融合背包时箭头的位置逻辑。
 1.3.9：兼容45格装备栏显示异常的问题。
 1.3.8：优化代码逻辑、调整模组加载优先级以兼容其他模组。
@@ -26,7 +26,7 @@ priority = -1 -- 优先级 默认0
 
 author = "Breathe" -- mod的作者
 
-version = "1.4.1" -- mod的版本号
+version = "1.4.2" -- mod的版本号
 
 api_version = 10 -- API版本号
 
@@ -154,10 +154,38 @@ configuration_options = {
         },
         default = true
     },
-    {   name = "", label = "其他兼容性配置", hover = "", options = { { description = "", data = 0 } }, default = 0  },
+    {   name = "", label = "其他配置(推荐默认)", hover = "", options = { { description = "", data = 0 } }, default = 0  },
+    {   name = "", label = "鸢一折纸", hover = "", options = { { description = "", data = 0 } }, default = 0  },
+    {
+        name = "MOD_YYZZ_MJTS",
+        label = "绝灭天使",
+        hover = "是否识别该物品到额外装备",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "有兼容问题暂不支持开启。"
+            }
+        },
+        default = false
+    },
+    {
+        name = "MOD_YYZZ_JSMW",
+        label = "救世魔王",
+        hover = "是否识别该物品到额外装备",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "有兼容问题暂不支持开启。"
+            }
+        },
+        default = false
+    },
+    {   name = "", label = "海洋传说", hover = "", options = { { description = "", data = 0 } }, default = 0  },
     {
         name = "MOD_HYCS_YHFF",
-        label = "海洋传说: 雨花·扶风",
+        label = "雨花·扶风",
         hover = "是否识别该物品到额外装备",
         options = {
             {

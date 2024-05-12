@@ -8,10 +8,27 @@ local AUTO_SLOTS_BELLY = GetModConfigData("AUTO_SLOTS_BELLY")
 local AUTO_SLOTS_NECK = GetModConfigData("AUTO_SLOTS_NECK")
 local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
 local MOD_HYCS_YHFF = GetModConfigData("MOD_HYCS_YHFF")
+local MOD_YYZZ_MJTS = GetModConfigData("MOD_YYZZ_MJTS")
+local MOD_YYZZ_JSMW = GetModConfigData("MOD_YYZZ_JSMW")
 
 local symbol_belly = require("symbol_belly") -- 定义服装栏物品
 local symbol_neck = require("symbol_neck") -- 定义护符栏物品
 local symbol_back = require("symbol_back") -- 定义背包栏物品
+
+-- 校准 symbol表 根据设置中生成最终的物品表 后续再根据该表进行装备栏的分配
+local function CalibrationSymBol()
+    -- 移除特殊设置项的物品识别
+    if not MOD_HYCS_YHFF then
+        symbol_belly['lg_fufeng'] = nil
+    end
+    if not MOD_YYZZ_MJTS then
+        symbol_belly['to_angel'] = nil
+    end
+    if not MOD_YYZZ_JSMW then
+        symbol_belly['to_satan'] = nil
+    end
+end
+CalibrationSymBol()
 
 local Inv = GLOBAL.require "widgets/inventorybar"
 
@@ -129,11 +146,6 @@ local function InitPrefab()
                 local function InitBelly(inst)
                     inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.BODY
                 end
-
-                if not MOD_HYCS_YHFF then
-                    symbol_belly['lg_fufeng'] = nil
-                end
-                
                 -- 标注服装栏物品
                 for k, v in pairs(symbol_belly) do
                     AddPrefabPostInit(k, InitBelly)
@@ -227,6 +239,7 @@ local function InitPrefab()
             -- 除身体部分物品外 其余的物品不判断
             local equipslot = inst.components.equippable.equipslot or nil
             if equipslot == nil or equipslot ~= "body" then
+                return
             end
 
             local prefab = inst.prefab -- 物品名称
@@ -242,7 +255,7 @@ local function InitPrefab()
             if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
                 -- 自动匹配腹部上的物品 暂时不支持
                 local function AutoMatchBelly()
-                    local is_clothing = string.find(prefab, "clothing") -- 是否为护符
+                    local is_clothing = string.find(prefab, "clothing") -- 是否为服装
                     if is_clothing then
                         inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
                     end
