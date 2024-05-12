@@ -11,6 +11,7 @@ local MOD_HYCS_YHFF = GetModConfigData("MOD_HYCS_YHFF")
 local MOD_YYZZ_MJTS = GetModConfigData("MOD_YYZZ_MJTS")
 local MOD_YYZZ_JSMW = GetModConfigData("MOD_YYZZ_JSMW")
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
+local MOD_XE_YMYD = GetModConfigData("MOD_XE_YMYD")
 
 local symbol_belly = require("symbol_belly") -- 定义服装栏物品
 local symbol_neck = require("symbol_neck") -- 定义护符栏物品
@@ -28,6 +29,9 @@ local function CalibrationSymBol()
     end
     if not MOD_YYZZ_JSMW then
         symbol_belly['to_satan'] = nil
+    end
+    if not MOD_XE_YMYD then
+        symbol_belly['myxl_dreambook'] = nil
     end
     -- 这里就是取true 调整的是 force_symbol_body 表
     if MOD_LJ_ZGF then
@@ -248,8 +252,15 @@ local function InitPrefab()
             local is_force_symbol_body = force_symbol_body[prefab] -- 是否属于强制身体物品
             if is_force_symbol_body then
                 inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BODY
+                -- 这里不应该对修改原模组物品的设定影响平衡
                 -- inst.components.inventoryitem.cangoincontainer = true
                 -- inst:RemoveTag("backpack")
+                return
+            end
+
+            -- 如果已经进行了适配的物品也不进行智能适配
+            local is_adaptation = symbol_belly[prefab] or symbol_neck[prefab] or symbol_back[prefab]
+            if is_force_symbol_body then
                 return
             end
 

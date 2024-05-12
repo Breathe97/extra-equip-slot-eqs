@@ -45,5 +45,6 @@ return {
     armor_windbreaker = "armor_windbreaker", -- 岛屿冒险-防风衣
     blubbersuit = "blubbersuit", -- 岛屿冒险-鲸脂套装
     armor_snakeskin = "armor_snakeskin", -- 岛屿冒险-蛇皮夹克
+    myxl_dreambook = "myxl_dreambook", -- 璇儿-遗梦芸典
     zhifu = "zhifu" -- 战舰少女补给包-秋冬制服
 }
