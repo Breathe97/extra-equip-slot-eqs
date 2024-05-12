@@ -11,7 +11,7 @@ description =
 󰀜 其他模组的适配可以留言（物品的英文+中文+模组的名称）。
 
 󰀏 近期更新：
-1.4.4：对部分模组新增额外配置选项（推荐保持默认）。
+1.4.5：对部分模组新增额外配置选项（推荐保持默认）。
 1.4.0：重写融合背包时箭头的位置逻辑。
 1.3.9：兼容45格装备栏显示异常的问题。
 1.3.8：优化代码逻辑、调整模组加载优先级以兼容其他模组。
@@ -25,7 +25,7 @@ priority = -1 -- 优先级 默认0
 
 author = "Breathe" -- mod的作者
 
-version = "1.4.4" -- mod的版本号
+version = "1.4.5" -- mod的版本号
 
 api_version = 10 -- API版本号
 
@@ -153,34 +153,7 @@ configuration_options = {
         },
         default = true
     },
-    {   name = "", label = "其他模组配置(推荐默认)", hover = "", options = { { description = "", data = 0 } }, default = 0  },
-    {   name = "", label = "鸢一折纸", hover = "", options = { { description = "", data = 0 } }, default = 0  },
-    {
-        name = "MOD_YYZZ_MJTS",
-        label = "绝灭天使",
-        hover = "是否识别该物品到额外装备",
-        options = {
-            {
-                description = "否",
-                data = false,
-                hover = "有兼容问题暂不支持开启。"
-            }
-        },
-        default = false
-    },
-    {
-        name = "MOD_YYZZ_JSMW",
-        label = "救世魔王",
-        hover = "是否识别该物品到额外装备",
-        options = {
-            {
-                description = "否",
-                data = false,
-                hover = "有兼容问题暂不支持开启。"
-            }
-        },
-        default = false
-    },
+    {   name = "", label = "其他模组配置 (推荐默认)", hover = "", options = { { description = "", data = 0 } }, default = 0  },
     {   name = "", label = "棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0  },
     {
         name = "MOD_LJ_ZGF",
@@ -215,6 +188,33 @@ configuration_options = {
                 description = "是",
                 data = true,
                 hover = "会丢失原模组套装效果：同时装备雨花·涟漪、雨花·冰魄、雨花·扶风，每秒为玩家额外上涨3点潮湿值。"
+            }
+        },
+        default = false
+    },
+    {   name = "", label = "鸢一折纸", hover = "", options = { { description = "", data = 0 } }, default = 0  },
+    {
+        name = "MOD_YYZZ_MJTS",
+        label = "绝灭天使",
+        hover = "是否识别该物品到额外装备",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "有兼容问题暂不支持开启。"
+            }
+        },
+        default = false
+    },
+    {
+        name = "MOD_YYZZ_JSMW",
+        label = "救世魔王",
+        hover = "是否识别该物品到额外装备",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "有兼容问题暂不支持开启。"
             }
         },
         default = false
