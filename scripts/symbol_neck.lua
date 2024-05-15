@@ -24,7 +24,6 @@ return {
     sora2amulet = "sora2amulet", -- 小穹
     sorabowknot = "sorabowknot", -- 小穹
     luckamulet = "luckamulet", -- 经济学
-    terraprisma = "terraprisma", -- 光棱剑
     wharang_amulet = "wharang_amulet", -- 千年狐
     ndnr_opalpreciousamulet = "ndnr_opalpreciousamulet"-- 富贵
 }
