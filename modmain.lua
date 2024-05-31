@@ -481,5 +481,113 @@ local function RepairExtra()
 			end
         end)
     end
+
+    -- 参考于 2950481491
+    if GLOBAL.EQUIPSLOTS.BELLY then
+    -- 5. 当你给“寄居蟹隐士”一件外套时，她会尝试使用旧的装备槽。让我们也用新的.
+    -- See `scripts/prefabs/hermitcrab.lua`.
+    AddPrefabPostInit("hermitcrab", function(inst)
+        if not GLOBAL.TheWorld.ismastersim then
+            return
+        end
+
+        local function iscoat(item)
+            return item.components.insulator and
+                    item.components.insulator:GetInsulation() >= GLOBAL.TUNING.INSULATION_SMALL and
+                    item.components.insulator:GetType() == GLOBAL.SEASONS.WINTER and
+                    item.components.equippable and
+                    item.components.equippable.equipslot == EQUIPSLOTS_MAP.BELLY
+        end
+
+        local function getcoat(inst1)
+            local equipped = inst1.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
+            return inst1.components.inventory:FindItem(function(testitem) return iscoat(testitem) end)
+                    or (equipped and iscoat(equipped) and equipped)
+        end
+
+        -- 添加一个额外的项目监听器.
+        -- See `scripts/prefabs/hermitcrab.lua:1011`.
+        inst:ListenForEvent("itemget", function(_, data)
+            if iscoat(data.item) and GLOBAL.TheWorld.state.issnowing then
+                local TASKS_GIVE_PUFFY_VEST = 11 -- Copy from `prefabs/hermitcrab.lua:57`.
+                inst.components.inventory:Equip(data.item)
+                inst.components.friendlevels:CompleteTask(TASKS_GIVE_PUFFY_VEST)
+            end
+        end)
+
+        -- 覆盖 `ShouldAcceptItem`.
+        -- See `scripts/prefabs/hermitcrab.lua:122-123,127`.
+        local ShouldAcceptItem_Base = inst.components.trader.test
+        inst.components.trader:SetAcceptTest(function(inst1, item)
+            return (iscoat(item) and GLOBAL.TheWorld.state.issnowing and not getcoat(inst1))
+                    or ShouldAcceptItem_Base(inst1, item)
+        end)
+
+        -- 覆盖 `OnRefuseItem`.
+        -- See `scripts/prefabs/hermitcrab.lua:144-146`.
+        local OnRefuseItem_Base = inst.components.trader.onrefuse
+        inst.components.trader.onrefuse = function(inst1, giver, item)
+            if iscoat(item) then
+                if getcoat(inst1) then
+                    inst1.components.npc_talker:Say(GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT_HASONE[math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT_HASONE)])
+                elseif not GLOBAL.TheWorld.state.issnowing then
+                    inst1.components.npc_talker:Say(GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT[math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT)])
+                end
+            end
+            OnRefuseItem_Base(inst, giver, item)
+        end
+
+        -- 覆盖 `iscoat`.
+        -- See `scripts/prefabs/hermitcrab.lua:1363`.
+        inst.iscoat = iscoat
+        inst.getcoat = getcoat
+    end)
+
+
+    -- 6. “寄居蟹隐士”有一个大脑，可以让她在旧装备槽中装备/取消装备外套。让我们也用新的.
+    -- See `scripts/brains/hermitcrabbrain.lua`.
+    AddBrainPostInit("hermitcrabbrain", function(brain)
+        local function using_coat(inst)
+            local equipped = inst.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
+            return equipped and inst.iscoat(equipped) or nil
+        end
+
+        local function has_coat(inst)
+            return inst.components.inventory:FindItem(function(testitem) return inst.iscoat(testitem) end)
+        end
+
+        local function EquipCoat(inst)
+            local coat = inst.getcoat(inst)
+            if coat then
+                inst.components.inventory:Equip(coat)
+            end
+        end
+
+        local function UnequipCoat(inst)
+            local item = inst.components.inventory:Unequip(EQUIPSLOTS_MAP.BELLY)
+            inst.components.inventory:GiveItem(item)
+        end
+
+        local new_children = {}
+        for _, child in ipairs(brain.bt.root.children) do
+            if child.name == "Sequence" and child.children[1].name == "coat" then
+                table.insert(new_children,
+                        GLOBAL.IfNode(function() return not brain.inst.sg:HasStateTag("busy") and GLOBAL.TheWorld.state.issnowing and has_coat(brain.inst) and not using_coat(brain.inst) end,
+                                "coat",
+                                GLOBAL.DoAction(brain.inst, EquipCoat, "coat", true))
+                )
+            elseif child.name == "Sequence" and child.children[1].name == "stop coat" then
+                table.insert(new_children,
+                        GLOBAL.IfNode(function() return not brain.inst.sg:HasStateTag("busy") and not GLOBAL.TheWorld.state.issnowing and using_coat(brain.inst) end,
+                                "stop coat",
+                                GLOBAL.DoAction(brain.inst, UnequipCoat, "stop coat", true))
+                )
+            else
+                table.insert(new_children, child)
+            end
+        end
+        brain.bt = GLOBAL.BT(brain.inst, GLOBAL.PriorityNode(new_children, 0.5))
+    end)
+    end
 end
 RepairExtra()
