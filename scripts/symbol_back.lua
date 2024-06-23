@@ -9,6 +9,8 @@ return {
     spicepack = "swap_seasack", -- 厨师袋
     
     --背包栏 模组物品
+    mone_seasack = "mone_seasack", -- 更多物品-海上麻袋
+    mone_seedpouch = "mone_seedpouch", -- 更多物品-妈妈放心种子袋
     thatchpack = "swap_thatchpack", -- 永不妥协-茅草包
     seasack = "swap_seasack", -- 永不妥协-海带背包
     piratepack = "swap_pirate_booty_bag", -- 永不妥协-海盗箱子
