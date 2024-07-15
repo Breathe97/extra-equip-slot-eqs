@@ -25,5 +25,6 @@ return {
     sorabowknot = "sorabowknot", -- 小穹
     luckamulet = "luckamulet", -- 经济学
     wharang_amulet = "wharang_amulet", -- 千年狐
+    fhl_hsf = "fhl_hsf", -- 风幻龙-护身符
     ndnr_opalpreciousamulet = "ndnr_opalpreciousamulet"-- 富贵
 }
