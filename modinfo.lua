@@ -11,10 +11,10 @@ description =
 󰀜 其他模组的适配可以留言（物品的英文+中文+模组的名称）。
 
 󰀏 近期更新：
+1.5.3：适配 永不妥协的部分服装物品不能正确识别到服装栏。
 1.5.2：适配 风幻龙的护身符。
 1.5.1：适配 模组[更多物品]中海上麻袋和妈妈放心种子袋到背包栏。
 1.5.0：修复 开启服装栏后不能正常给予寄居蟹奶奶保暖服装。
-1.4.9：移除 对光棱剑的护符栏适配（原模组支持自定义设置）。
 
 󰀀 图标也抄过来了 嘻嘻。
                     󰀜󰀝󰀀󰀞󰀘󰀁󰀟󰀠󰀡󰀂󰀪󰀕󰀫󰀖󰀛󰀬󰀭󰀮󰀰󰀉󰀚󰀊󰀋󰀌󰀍
@@ -25,7 +25,7 @@ priority = -1 -- 优先级 默认0
 
 author = "Breathe" -- mod的作者
 
-version = "1.5.2" -- mod的版本号
+version = "1.5.3" -- mod的版本号
 
 api_version = 10 -- API版本号
 
@@ -154,6 +154,25 @@ configuration_options = {
         default = true
     },
     {   name = "", label = "其他模组配置 (推荐默认)", hover = "", options = { { description = "", data = 0 } }, default = 0  },
+    {   name = "", label = "永不妥协", hover = "", options = { { description = "", data = 0 } }, default = 0  },
+    {
+        name = "MOD_YBTX_BELLY",
+        label = "强制服装栏",
+        hover = "将 透气背心、松软背心、清凉夏装、花衬衫、雨衣 强制识别到服装栏",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "保持自动分配"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "强制装备在服装栏。"
+            }
+        },
+        default = true
+    },
     {   name = "", label = "棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0  },
     {
         name = "MOD_LJ_ZGF",

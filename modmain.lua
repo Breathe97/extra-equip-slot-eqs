@@ -10,6 +10,7 @@ local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
 local MOD_HYCS_YHFF = GetModConfigData("MOD_HYCS_YHFF")
 local MOD_YYZZ_MJTS = GetModConfigData("MOD_YYZZ_MJTS")
 local MOD_YYZZ_JSMW = GetModConfigData("MOD_YYZZ_JSMW")
+local MOD_YBTX_BELLY = GetModConfigData("MOD_YBTX_BELLY")
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
 local MOD_XE_YMYD = GetModConfigData("MOD_XE_YMYD")
 
@@ -17,6 +18,7 @@ local symbol_belly = require("symbol_belly") -- 定义服装栏物品
 local symbol_neck = require("symbol_neck") -- 定义护符栏物品
 local symbol_back = require("symbol_back") -- 定义背包栏物品
 local force_symbol_body = require("force_symbol_body") -- 定义强制身体栏物品
+local force_symbol_belly = require("force_symbol_belly") -- 定义强制服装栏物品
 
 -- 校准 symbol表 根据设置中生成最终的物品表 后续再根据该表进行装备栏的分配
 local function CalibrationSymBol()
@@ -32,6 +34,14 @@ local function CalibrationSymBol()
     end
     if not MOD_XE_YMYD then
         symbol_belly['myxl_dreambook'] = nil
+    end
+    -- 如果不开启强制服装栏 调整的是 force_symbol_belly 表
+    if MOD_YBTX_BELLY == false then
+        force_symbol_belly['trunkvest_summer'] = nil
+        force_symbol_belly['trunkvest_winter'] = nil
+        force_symbol_belly['reflectivevest'] = nil
+        force_symbol_belly['hawaiianshirt'] = nil
+        force_symbol_belly['raincoat'] = nil
     end
     -- 这里就是取true 调整的是 force_symbol_body 表
     if MOD_LJ_ZGF then
@@ -248,18 +258,22 @@ local function InitPrefab()
 
             local prefab = inst.prefab -- 物品名称
 
+            -- 一些模组物品会被误以为是额外的装备 但是它实际上应该在服装栏
+            local is_force_symbol_belly = force_symbol_belly[prefab] -- 是否属于强制服装物品
+            if is_force_symbol_belly then
+                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.BODY -- 优先分配到服装栏 如果没有开启服装栏就分配到身体栏
+                return
+            end
+
             -- 一些模组物品会被误以为是额外的装备 但是它实际上应该在身体栏
             local is_force_symbol_body = force_symbol_body[prefab] -- 是否属于强制身体物品
             if is_force_symbol_body then
                 inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BODY
-                -- 这里不应该对修改原模组物品的设定影响平衡
-                -- inst.components.inventoryitem.cangoincontainer = true
-                -- inst:RemoveTag("backpack")
                 return
             end
 
             -- 如果已经进行了适配的物品也不进行智能适配
-            local is_adaptation = symbol_belly[prefab] or symbol_neck[prefab] or symbol_back[prefab]
+            local is_adaptation = symbol_belly[prefab] or symbol_neck[prefab] or symbol_back[prefab] or force_symbol_body[prefab] or force_symbol_belly[prefab]
             if is_force_symbol_body then
                 return
             end
