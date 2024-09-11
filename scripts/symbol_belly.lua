@@ -47,5 +47,7 @@ return {
     armor_snakeskin = "armor_snakeskin", -- 岛屿冒险-蛇皮夹克
     myxl_dreambook = "myxl_dreambook", -- 璇儿-遗梦芸典
     m_scarf  = "m_scarf ", -- M.louis-黑围巾
+    third_eye  = "third_eye ", -- 古明地恋-恋恋的第三只眼
+    third_eye2  = "third_eye2 ", -- 古明地恋-恋恋的增幅第三只眼
     zhifu = "zhifu" -- 战舰少女补给包-秋冬制服
 }
