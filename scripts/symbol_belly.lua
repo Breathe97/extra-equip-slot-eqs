@@ -49,5 +49,7 @@ return {
     m_scarf           = "m_scarf ",          -- M.louis-黑围巾
     third_eye         = "third_eye ",        -- 古明地恋-恋恋的第三只眼
     third_eye2        = "third_eye2 ",       -- 古明地恋-恋恋的增幅第三只眼
+    satori_eye        = "satori_eye ",       -- 古明地觉-恋恋的增幅第三只眼
+    satori_eye2        = "satori_eye2 ",       -- 古明地觉-恋恋的增幅第三只眼
     zhifu             = "zhifu"              -- 战舰少女补给包-秋冬制服
 }
