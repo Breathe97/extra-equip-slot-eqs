@@ -23,7 +23,7 @@ priority = 1                      -- 优先级 默认0 值越大 优先级越低
 
 author = "Breathe"                 -- mod的作者
 
-version = "1.5.9"                  -- mod的版本号
+version = "1.6.0"                  -- mod的版本号
 
 api_version = 10                   -- API版本号
 
