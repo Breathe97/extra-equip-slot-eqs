@@ -9,21 +9,21 @@ description =
 󰀜 其他模组的适配可以留言（物品的英文+中文+模组的名称）。
 
 󰀏 近期更新：
+1.6.1：增加配置菜单英文支持。
 1.6.0：移除 穹の护 为服装栏，并新增其他强制服装栏物品。
 1.5.9：调整加载优先级以适配其他同类互斥模组。
 1.5.8：适配 古明地觉 第三只眼 到服装栏。
-1.5.6：增加 游戏内物品代码信息显示选项。
 
 󰀀 图标也抄过来了 嘻嘻。
                     󰀜󰀝󰀀󰀞󰀘󰀁󰀟󰀠󰀡󰀂󰀪󰀕󰀫󰀖󰀛󰀬󰀭󰀮󰀰󰀉󰀚󰀊󰀋󰀌󰀍
                     󰀜󰀝󰀀󰀞󰀘󰀁󰀟󰀠󰀡󰀂󰀪󰀕󰀫󰀖󰀛󰀬󰀭󰀮󰀰󰀉󰀚󰀊󰀋󰀌󰀍
 ]]
 
-priority = 1                      -- 优先级 默认0 值越大 优先级越低
+priority = 1                       -- 优先级 默认0 值越大 优先级越低
 
 author = "Breathe"                 -- mod的作者
 
-version = "1.6.0"                  -- mod的版本号
+version = "1.6.1"                  -- mod的版本号
 
 api_version = 10                   -- API版本号
 
@@ -40,6 +40,7 @@ icon_atlas = "preview.xml"
 icon = "preview.tex"
 
 server_filter_tags = { "refresh", "Krampus", "private" } -- 服务器标签可以不写
+
 
 configuration_options = {
     { name = "", label = "基本配置", hover = "", options = { { description = "", data = 0 } }, default = 0 },
@@ -275,3 +276,246 @@ configuration_options = {
         default = false
     }
 }
+
+
+local isZh = locale == "zh" or locale == "zhr"
+
+-- 非中文
+if not isZh then
+    configuration_options = {
+        { name = "", label = "Basic configuration",                        hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "SLOTS_BELLY",
+            label = "Clothing section",
+            hover = "Do you want to expand the clothing section",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "It's all down, are you sure you don't want to open it?"
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "An additional clothing column will be added."
+                }
+            },
+            default = true
+        },
+        {
+            name = "SLOTS_NECK",
+            label = "Talisman fence",
+            hover = "Do you want to expand the talisman bar",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "It's all down, are you sure you don't want to open it?"
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "An additional talisman bar will be added."
+                }
+            },
+            default = true
+        },
+        {
+            name = "SLOTS_BACK",
+            label = "Backpack bar",
+            hover = "Do you want to expand the backpack compartment",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "It's all down, are you sure you don't want to open it?"
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "An additional backpack compartment will be added."
+                }
+            },
+            default = true
+        },
+        {
+            name = "AUTO_SLOTS_BELLY",
+            label = "Automatically identify items in the clothing column",
+            hover = "Automatically identify whether an item belongs to the clothing category by its name",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "There is currently no good fitting method for clothes, so it is not supported temporarily."
+                },
+                -- {
+                --     description = "Yes",
+                --     data = true,
+                --     hover = "Automatically identify unknown module items and assign them to the clothing column."
+                -- }
+            },
+            default = false
+        },
+        {
+            name = "AUTO_SLOTS_NECK",
+            label = "Automatically identify items in the talisman bar",
+            hover = "Automatically identify whether an item belongs to the talisman category by its name",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "It's all down, are you sure you don't want to open it?"
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "Automatically identify unknown module items and assign them to the talisman bar."
+                }
+            },
+            default = true
+        },
+        {
+            name = "AUTO_SLOTS_BACK",
+            label = "Automatically identify backpack items",
+            hover = "Automatically identify whether an item belongs to the backpack category by its name",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "It's all down, are you sure you don't want to open it?"
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "Automatically identify unknown module items and assign them to the backpack compartment."
+                }
+            },
+            default = true
+        },
+
+        { name = "", label = "Other configurations (recommended default)", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "HOVER_ITEM_CODE",
+            label = "Item information",
+            hover =
+            "After opening, pointing the mouse at the item in the game can view the code information of the item.",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "Code information for closing items"
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "Display the code information of the item"
+                }
+            },
+            default = false
+        },
+        { name = "", label = "永不妥协", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "MOD_YBTX_BELLY",
+            label = "Mandatory clothing column",
+            hover =
+            "Forcefully identify breathable vests, soft vests, cool summer clothes, floral shirts, and raincoats in the clothing column",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "Maintain automatic allocation"
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "Mandatory equipment in the clothing store."
+                }
+            },
+            default = true
+        },
+        { name = "", label = "棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "MOD_LJ_ZGF",
+            label = "Zigui · Pot",
+            hover = "Do you recognize the item in the additional equipment compartment",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "Keep the item in the body compartment."
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "该物品会装备在背包栏，有失平衡，谨慎开启。"
+                }
+            },
+            default = false
+        },
+        { name = "", label = "海洋传说", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "MOD_HYCS_YHFF",
+            label = "雨花·扶风",
+            hover = "Do you recognize the item in the additional equipment compartment",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = ""
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "会丢失原模组套装效果：同时装备雨花·涟漪、雨花·冰魄、雨花·扶风，每秒为玩家额外上涨3点潮湿值。"
+                }
+            },
+            default = false
+        },
+        { name = "", label = "璇儿", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "MOD_XE_YMYD",
+            label = "遗梦芸典",
+            hover = "Do you recognize the item in the additional equipment compartment",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "Keep the item in the body compartment."
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "This item will be equipped in the clothing section."
+                }
+            },
+            default = true
+        },
+        { name = "", label = "Kite Folding Paper", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "MOD_YYZZ_MJTS",
+            label = "Extinguishing Angel",
+            hover = "Do you recognize the item in the additional equipment compartment",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "There is a compatibility issue and it is currently not supported to enable."
+                }
+            },
+            default = false
+        },
+        {
+            name = "MOD_YYZZ_JSMW",
+            label = "Salvation Demon King",
+            hover = "Do you recognize the item in the additional equipment compartment",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "There is a compatibility issue and it is currently not supported to enable."
+                }
+            },
+            default = false
+        }
+    }
+end
