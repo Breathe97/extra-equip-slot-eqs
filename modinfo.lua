@@ -172,7 +172,7 @@ configuration_options = {
         },
         default = false
     },
-    { name = "", label = "永不妥协", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+    { name = "", label = "Uncompromising-永不妥协", hover = "", options = { { description = "", data = 0 } }, default = 0 },
     {
         name = "MOD_YBTX_BELLY",
         label = "强制服装栏",
@@ -191,7 +191,7 @@ configuration_options = {
         },
         default = true
     },
-    { name = "", label = "棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+    { name = "", label = "Legion-棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
     {
         name = "MOD_LJ_ZGF",
         label = "子圭·釜",
@@ -210,7 +210,7 @@ configuration_options = {
         },
         default = false
     },
-    { name = "", label = "海洋传说", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+    { name = "", label = "海洋传说-Legend and sea", hover = "", options = { { description = "", data = 0 } }, default = 0 },
     {
         name = "MOD_HYCS_YHFF",
         label = "雨花·扶风",
@@ -229,7 +229,7 @@ configuration_options = {
         },
         default = false
     },
-    { name = "", label = "璇儿", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+    { name = "", label = "璇儿-XuanEr", hover = "", options = { { description = "", data = 0 } }, default = 0 },
     {
         name = "MOD_XE_YMYD",
         label = "遗梦芸典",
@@ -248,7 +248,7 @@ configuration_options = {
         },
         default = true
     },
-    { name = "", label = "鸢一折纸", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+    { name = "", label = "鸢一折纸-Tobiichi Origami", hover = "", options = { { description = "", data = 0 } }, default = 0 },
     {
         name = "MOD_YYZZ_MJTS",
         label = "绝灭天使",
@@ -413,7 +413,7 @@ if not isZh then
             },
             default = false
         },
-        { name = "", label = "永不妥协", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        { name = "", label = "Uncompromising-永不妥协", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
             name = "MOD_YBTX_BELLY",
             label = "Mandatory clothing column",
@@ -433,7 +433,7 @@ if not isZh then
             },
             default = true
         },
-        { name = "", label = "棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        { name = "", label = "Legion-棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
             name = "MOD_LJ_ZGF",
             label = "Zigui · Pot",
@@ -452,7 +452,7 @@ if not isZh then
             },
             default = false
         },
-        { name = "", label = "海洋传说", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        { name = "", label = "海洋传说-Legend and sea", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
             name = "MOD_HYCS_YHFF",
             label = "雨花·扶风",
@@ -471,7 +471,7 @@ if not isZh then
             },
             default = false
         },
-        { name = "", label = "璇儿", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        { name = "", label = "璇儿-XuanEr", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
             name = "MOD_XE_YMYD",
             label = "遗梦芸典",
@@ -490,7 +490,7 @@ if not isZh then
             },
             default = true
         },
-        { name = "", label = "Kite Folding Paper", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        { name = "", label = "鸢一折纸-Tobiichi Origami", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
             name = "MOD_YYZZ_MJTS",
             label = "Extinguishing Angel",
