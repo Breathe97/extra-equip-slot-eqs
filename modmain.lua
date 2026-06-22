@@ -406,19 +406,6 @@ local function RepairExtra()
 
     -- 开启护符栏后的修复
     if GLOBAL.EQUIPSLOTS.NECK then
-        -- 绿护符在制作栏中显示-20%
-        local Inv = GLOBAL.require "widgets/redux/craftingmenu_ingredients"
-        local SetRecipe_base = Inv.SetRecipe
-
-        Inv.SetRecipe = function(self, ...)
-            local inventory = self.owner.replica.inventory
-            local GetEquippedItem_Orig = inventory.GetEquippedItem
-            inventory.GetEquippedItem = function(inst)
-                return GetEquippedItem_Orig(inst, GLOBAL.EQUIPSLOTS.NECK)
-            end
-            SetRecipe_base(self, ...)
-            inventory.GetEquippedItem = GetEquippedItem_Orig
-        end
 
         -- 红护符复活
         AddStategraphPostInit("wilson", function(self)
