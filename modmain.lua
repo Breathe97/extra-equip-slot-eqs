@@ -234,11 +234,23 @@ local function InitPrefab()
                 end
                 -- 给背包分配插槽
                 local function InitBack(inst)
+                    local orig_onequip = inst.components.equippable.onequipfn
+                    local orig_onunequip = inst.components.equippable.onunequipfn
                     inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BODY
-                    -- 监听背包装备卸下事件
+                    -- 监听背包装备卸下事件（保留原版 onequip/onunequip 逻辑，如皮肤变色等）
                     if DST then
-                        inst.components.equippable:SetOnEquip(bagonequip)
-                        inst.components.equippable:SetOnUnequip(bagonunequip)
+                        inst.components.equippable:SetOnEquip(function(_inst, owner)
+                            if orig_onequip then
+                                orig_onequip(_inst, owner)
+                            end
+                            bagonequip(_inst, owner)
+                        end)
+                        inst.components.equippable:SetOnUnequip(function(_inst, owner)
+                            bagonunequip(_inst, owner)
+                            if orig_onunequip then
+                                orig_onunequip(_inst, owner)
+                            end
+                        end)
                     end
                 end
 
@@ -379,15 +391,33 @@ local function RepairExtra()
             for entry in path:gmatch("[^%.]+") do
                 i = 1
                 prev = val
+                local found = false
                 while true do
                     local name, value = GLOBAL.debug.getupvalue(val, i)
                     if name == entry then
                         val = value
+                        found = true
                         break
                     elseif name == nil then
-                        return
+                        break
                     end
                     i = i + 1
+                end
+                -- 按名称查找失败时，按位置索引遍历，取第一个 function/table 类型的 upvalue 作为 fallback
+                if not found then
+                    i = 1
+                    prev = val
+                    while true do
+                        local name, value = GLOBAL.debug.getupvalue(val, i)
+                        if name == nil then
+                            return
+                        end
+                        if type(value) == "function" or type(value) == "table" then
+                            val = value
+                            break
+                        end
+                        i = i + 1
+                    end
                 end
             end
             GLOBAL.debug.setupvalue(prev, i, new)
@@ -398,29 +428,100 @@ local function RepairExtra()
             end
         end
 
+        -- Option B: 为关键函数创建替换包装，确保使用正确的 GetOverflowContainer
+        local patchedGetOverflowContainer = GetOverflowContainer
+        if inst.Has then
+            local orig_Has = inst.Has
+            inst.Has = function(_inst, prefab, amount, checkallcontainers)
+                local iscrafting = checkallcontainers
+                local count = _inst._activeitem ~= nil and _inst._activeitem.prefab == prefab and not (iscrafting and _inst._activeitem:HasTag("nocrafting")) and (_inst._activeitem.replica.stackable and _inst._activeitem.replica.stackable:StackSize() or 1) or 0
+                for i, v in ipairs(_inst._items) do
+                    local item = v:value()
+                    if item ~= nil and item ~= _inst._activeitem and item.prefab == prefab and not (iscrafting and item:HasTag("nocrafting")) then
+                        count = count + (item.replica.stackable and item.replica.stackable:StackSize() or 1)
+                    end
+                end
+                local overflow = patchedGetOverflowContainer(_inst)
+                if overflow ~= nil then
+                    local overflowhas, overflowcount = overflow:Has(prefab, amount, iscrafting)
+                    count = count + overflowcount
+                end
+                if checkallcontainers then
+                    local inventory_replica = _inst._parent and _inst._parent.replica.inventory
+                    local containers = inventory_replica and inventory_replica:GetOpenContainers()
+                    if containers then
+                        for container_inst in pairs(containers) do
+                            local container = container_inst.replica.container or container_inst.replica.inventory
+                            if container and container ~= overflow and not container.excludefromcrafting and (container.IsReadOnlyContainer == nil or not container:IsReadOnlyContainer()) then
+                                local containerhas, containercount = container:Has(prefab, amount, iscrafting)
+                                count = count + containercount
+                            end
+                        end
+                    end
+                end
+                return count >= amount, count
+            end
+        end
+
         if not IsServer and not GLOBAL.TheWorld.ismastersim then
             inst.GetOverflowContainer = GetOverflowContainer
         end
     end
     AddPrefabPostInit("inventory_classified", PrefabPostInit)
 
+    -- 第三方模组兼容：补丁 replica.inventory.GetEquippedItem
+    -- 当查询 BODY 插槽且为空时，自动回查自定义插槽（BACK/NECK/BELLY）
+    -- 这样像"黑化行为学"这类依赖官方 API 的模组无需修改就能找到自定义插槽中的物品
+    AddComponentPostInit("inventory_replica", function(self)
+        local orig_GetEquippedItem = self.GetEquippedItem
+        self.GetEquippedItem = function(self, eslot)
+            if eslot == GLOBAL.EQUIPSLOTS.BODY then
+                local item = orig_GetEquippedItem(self, eslot)
+                if item ~= nil then
+                    return item
+                end
+                -- BODY 为空时，回查自定义插槽
+                if GLOBAL.EQUIPSLOTS.BACK then
+                    item = orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.BACK)
+                    if item ~= nil then return item end
+                end
+                if GLOBAL.EQUIPSLOTS.NECK then
+                    item = orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.NECK)
+                    if item ~= nil then return item end
+                end
+                if GLOBAL.EQUIPSLOTS.BELLY then
+                    item = orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.BELLY)
+                    if item ~= nil then return item end
+                end
+                return nil
+            end
+            return orig_GetEquippedItem(self, eslot)
+        end
+    end)
+
     -- 开启护符栏后的修复
     if GLOBAL.EQUIPSLOTS.NECK then
 
-        -- 红护符复活
+        -- 红护符复活（兼容新旧状态名 "rebirth" / "amulet_rebirth"）
         AddStategraphPostInit("wilson", function(self)
-            local original_amulet_rebirth = self.states["amulet_rebirth"]
-            local original_amulet_rebirth_onexit = original_amulet_rebirth.onexit
-            original_amulet_rebirth.onexit = function(inst)
+            local rebirth_state = self.states["rebirth"] or self.states["amulet_rebirth"]
+            if not rebirth_state then
+                return
+            end
+            local original_rebirth_onexit = rebirth_state.onexit
+            rebirth_state.onexit = function(inst)
+                -- 用 Unequip 替代 RemoveItem，触发 onunequip 链清理 swap_body 符号
                 local item = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.NECK)
                 if item and item.prefab == "amulet" then
-                    item = inst.components.inventory:RemoveItem(item)
+                    item = inst.components.inventory:Unequip(GLOBAL.EQUIPSLOTS.NECK)
                     if item then
                         item:Remove()
                         item.persists = false
                     end
                 end
-                original_amulet_rebirth_onexit(inst)
+                -- 保底清理护符残留的 swap_body 符号
+                inst.AnimState:ClearOverrideSymbol("swap_body")
+                original_rebirth_onexit(inst)
             end
         end)
     end
@@ -432,16 +533,17 @@ local function RepairExtra()
             local original_Equip = self.Equip
             -- 这个是装备背包的方法
             self.Equip = function(self, item, old_to_active)
-                if original_Equip(self, item, old_to_active) and item and item.components and item.components.equippable then
+                local result = original_Equip(self, item, old_to_active)
+                if result and item and item.components and item.components.equippable then
                     local eslot = item.components.equippable.equipslot
                     if self.equipslots[eslot] ~= item then
                         if eslot == GLOBAL.EQUIPSLOTS.BACK and item.components.container ~= nil then
                             self.inst:PushEvent("setoverflow", { overflow = item })
                         end
                     end
-                    return true
+                    return result
                 else
-                    return
+                    return result
                 end
             end
             -- 监听背包卸载
@@ -479,6 +581,26 @@ local function RepairExtra()
                     return backitem.components.container
                 elseif bodyitem ~= nil and bodyitem.components.container and isOpencontainers(self.inst, bodyitem) then
                     return bodyitem.components.container
+                end
+            end
+
+            -- 修复 FindItem：确保也能搜索到自定义装备插槽（如 BACK）中的容器物品
+            if self.FindItem then
+                local orig_FindItem = self.FindItem
+                self.FindItem = function(self, fn, ...)
+                    local result = orig_FindItem(self, fn, ...)
+                    if result then
+                        return result
+                    end
+                    -- 额外检查 BACK 插槽的容器
+                    local backitem = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                    if backitem ~= nil and backitem.components.container then
+                        result = backitem.components.container:FindItem(fn)
+                        if result then
+                            return result
+                        end
+                    end
+                    return nil
                 end
             end
         end)
