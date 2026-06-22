@@ -502,9 +502,10 @@ local function RepairExtra()
     -- 开启护符栏后的修复
     if GLOBAL.EQUIPSLOTS.NECK then
 
-        -- 红护符复活（兼容新旧状态名 "rebirth" / "amulet_rebirth"）
+        -- 红护符复活：在 SG 状态退出时移除 NECK 槽护符（复用原版生效的 SG hook 方案，确保消耗正确）
+        -- 并手动清理 swap_body 视觉符号，解决贴图残留问题
         AddStategraphPostInit("wilson", function(self)
-            local rebirth_state = self.states["rebirth"] or self.states["amulet_rebirth"]
+            local rebirth_state = self.states["amulet_rebirth"] or self.states["rebirth"]
             if not rebirth_state then
                 return
             end
@@ -512,10 +513,10 @@ local function RepairExtra()
             rebirth_state.onexit = function(inst)
                 local item = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.NECK)
                 if item and item.prefab == "amulet" then
-                    -- 先手动清理护符的视觉符号，再用 RemoveItem 移除（避免触发 unequip 事件链干扰重生流程）
-                    inst.AnimState:ClearOverrideSymbol("swap_body")
                     item = inst.components.inventory:RemoveItem(item)
                     if item then
+                        -- 在护符销毁前清理视觉符号（原版 onunequip_red 在重生状态会跳过清理）
+                        inst.AnimState:ClearOverrideSymbol("swap_body")
                         item:Remove()
                         item.persists = false
                     end
