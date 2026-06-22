@@ -510,20 +510,39 @@ local function RepairExtra()
             end
             local original_rebirth_onexit = rebirth_state.onexit
             rebirth_state.onexit = function(inst)
-                -- 用 Unequip 替代 RemoveItem，触发 onunequip 链清理 swap_body 符号
                 local item = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.NECK)
                 if item and item.prefab == "amulet" then
-                    item = inst.components.inventory:Unequip(GLOBAL.EQUIPSLOTS.NECK)
+                    -- 先手动清理护符的视觉符号，再用 RemoveItem 移除（避免触发 unequip 事件链干扰重生流程）
+                    inst.AnimState:ClearOverrideSymbol("swap_body")
+                    item = inst.components.inventory:RemoveItem(item)
                     if item then
                         item:Remove()
                         item.persists = false
                     end
                 end
-                -- 保底清理护符残留的 swap_body 符号
-                inst.AnimState:ClearOverrideSymbol("swap_body")
                 original_rebirth_onexit(inst)
             end
         end)
+
+        -- 建造护符在制作栏显示 -20% 折扣标记（安全回退 BODY→NECK，不修改函数签名）
+        local CraftingInv = GLOBAL.require "widgets/redux/craftingmenu_ingredients"
+        local SetRecipe_base = CraftingInv.SetRecipe
+        CraftingInv.SetRecipe = function(self, ...)
+            local inventory = self.owner.replica.inventory
+            local orig_GetEquippedItem = inventory.GetEquippedItem
+            inventory.GetEquippedItem = function(self, eslot)
+                if eslot == GLOBAL.EQUIPSLOTS.BODY then
+                    local item = orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.BODY)
+                    if item ~= nil then
+                        return item
+                    end
+                    return orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.NECK)
+                end
+                return orig_GetEquippedItem(self, eslot)
+            end
+            SetRecipe_base(self, ...)
+            inventory.GetEquippedItem = orig_GetEquippedItem
+        end
     end
 
     -- 开启背包栏后的修复
