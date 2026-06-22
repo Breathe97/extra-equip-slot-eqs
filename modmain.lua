@@ -557,19 +557,18 @@ local function RepairExtra()
                     return result
                 end
             end
-            -- 监听背包卸载
+            -- 监听背包/服装卸载，刷新 BODY 槽装备的视觉符号
             self.inst:ListenForEvent(
                 "unequip",
                 function(inst, data)
-                    local inventory = DST and inst.replica.inventory or inst.components.inventory
-                    if inventory ~= nil then
-                        local equipment = inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
-                        if equipment and equipment.components.equippable.onequipfn then
-                            if equipment.task ~= nil then
-                                equipment.task:Cancel()
-                                equipment.task = nil
-                            end
-                            equipment.components.equippable.onequipfn(equipment, inst)
+                    if data == nil or data.eslot == nil then
+                        return
+                    end
+                    -- 当 BACK 或 BELLY 槽物品被卸下时，重新应用 BODY 槽装备的 onequip 以覆盖残留符号
+                    if data.eslot == GLOBAL.EQUIPSLOTS.BACK or data.eslot == GLOBAL.EQUIPSLOTS.BELLY then
+                        local body_item = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY)
+                        if body_item and body_item.components.equippable.onequipfn then
+                            body_item.components.equippable.onequipfn(body_item, inst)
                         end
                     end
                 end
