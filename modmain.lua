@@ -286,13 +286,6 @@ local function InitPrefab()
                 return
             end
 
-            -- 如果已经进行了适配的物品也不进行智能适配
-            local is_adaptation = symbol_belly[prefab] or symbol_neck[prefab] or symbol_back[prefab] or
-                force_symbol_body[prefab] or force_symbol_belly[prefab]
-            if is_force_symbol_body then
-                return
-            end
-
             -- 只要不属于身体的物品就不往下走
             local equipslot = inst.components.equippable.equipslot or nil
             if equipslot == nil or equipslot ~= "body" then
@@ -361,24 +354,20 @@ local function RepairExtra()
             local headitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.HEAD)
             local bellyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BELLY)
 
-            if backitem ~= nil and backitem.replica and backitem.replica.container and backitem.replica.container._isopen then
+            if backitem ~= nil and backitem.replica and backitem.replica.container and backitem.replica.container:IsOpen() then
                 return backitem.replica.container
-            elseif bodyitem ~= nil and bodyitem.replica and bodyitem.replica.container and bodyitem.replica.container._isopen then
+            elseif bodyitem ~= nil and bodyitem.replica and bodyitem.replica.container and bodyitem.replica.container:IsOpen() then
                 return bodyitem.replica.container
-            elseif headitem ~= nil and headitem.replica and headitem.replica.container and headitem.replica.container._isopen then
+            elseif headitem ~= nil and headitem.replica and headitem.replica.container and headitem.replica.container:IsOpen() then
                 return headitem.replica.container
-            elseif bellyitem ~= nil and bellyitem.replica and bellyitem.replica.container and bellyitem.replica.container._isopen then
+            elseif bellyitem ~= nil and bellyitem.replica and bellyitem.replica.container and bellyitem.replica.container:IsOpen() then
                 return bellyitem.replica.container
             end
         end
 
-        -- 定义相关的方法然后遍历修改
+        -- 定义需要修补 GetOverflowContainer upvalue 的方法
         local funclist = {
             "Has",
-            "UseItemFromInvTile",
-            "ControllerUseItemOnItemFromInvTile",
-            "ControllerUseItemOnSelfFromInvTile",
-            "ControllerUseItemOnSceneFromInvTile",
             "ReceiveItem",
             "RemoveIngredients"
         }
@@ -680,7 +669,7 @@ local function RepairExtra()
                             [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT)])
                     end
                 end
-                OnRefuseItem_Base(inst, giver, item)
+                OnRefuseItem_Base(inst1, giver, item)
             end
 
             -- 覆盖 `iscoat`.

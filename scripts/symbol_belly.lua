@@ -50,7 +50,7 @@ return {
     third_eye2         = "third_eye2",        -- 古明地恋-增幅第三只眼
     satori_eye         = "satori_eye",        -- 古明地觉-第三只眼
     satori_eye2        = "satori_eye2",       -- 古明地觉-增幅第三只眼
-    armor_carrotlure   = "armor_carrotlure ", -- 胡萝卜
+    armor_carrotlure   = "armor_carrotlure",  -- 胡萝卜
     fsm_yunmie_outfits = "fsm_yunmie_outfits", --山海秘藏-云咩套
     sdf_victorian_suit = "sdf_victorian_suit", --Medievil Reanimated-衣服
     zhifu              = "zhifu"               -- 战舰少女补给包-秋冬制服
