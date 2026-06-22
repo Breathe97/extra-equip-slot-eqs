@@ -522,11 +522,13 @@ local function RepairExtra()
             local orig_GetEquippedItem = inventory.GetEquippedItem
             inventory.GetEquippedItem = function(self, eslot)
                 if eslot == GLOBAL.EQUIPSLOTS.BODY then
-                    local item = orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.BODY)
+                    -- 先直接查 NECK 槽（绕过 Bug 3 补丁的 BACK→BELLY 回退链）
+                    local item = orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.NECK)
                     if item ~= nil then
                         return item
                     end
-                    return orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.NECK)
+                    -- NECK 为空，再走 BODY 查询（含 Bug 3 回退）
+                    return orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.BODY)
                 end
                 return orig_GetEquippedItem(self, eslot)
             end
