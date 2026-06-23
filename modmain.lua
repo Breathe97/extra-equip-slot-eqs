@@ -341,13 +341,13 @@ local function RepairExtra()
             local headitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.HEAD)
             local bellyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BELLY)
 
-            if backitem ~= nil and backitem.replica and backitem.replica.container and backitem.replica.container:IsOpen() then
+            if backitem ~= nil and backitem.replica and backitem.replica.container and backitem.replica.container.IsOpen and backitem.replica.container:IsOpen() then
                 return backitem.replica.container
-            elseif bodyitem ~= nil and bodyitem.replica and bodyitem.replica.container and bodyitem.replica.container:IsOpen() then
+            elseif bodyitem ~= nil and bodyitem.replica and bodyitem.replica.container and bodyitem.replica.container.IsOpen and bodyitem.replica.container:IsOpen() then
                 return bodyitem.replica.container
-            elseif headitem ~= nil and headitem.replica and headitem.replica.container and headitem.replica.container:IsOpen() then
+            elseif headitem ~= nil and headitem.replica and headitem.replica.container and headitem.replica.container.IsOpen and headitem.replica.container:IsOpen() then
                 return headitem.replica.container
-            elseif bellyitem ~= nil and bellyitem.replica and bellyitem.replica.container and bellyitem.replica.container:IsOpen() then
+            elseif bellyitem ~= nil and bellyitem.replica and bellyitem.replica.container and bellyitem.replica.container.IsOpen and bellyitem.replica.container:IsOpen() then
                 return bellyitem.replica.container
             end
         end
