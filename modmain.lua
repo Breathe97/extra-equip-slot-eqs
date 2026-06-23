@@ -78,12 +78,14 @@ end
 local function InitSlot()
     -- 看不懂 大概意思就是说在原来的装备栏后面添加额外的衣服格子、背包格子、护符格子
     local function PostConstruct()
-        local Inv_Refresh_base = Inv.Refresh or function()
-            return ""
-        end
-        local Inv_Rebuild_base = Inv.Rebuild or function()
-            return ""
-        end
+        local Inv_Refresh_base = Inv.Refresh
+            or function ()
+                return ""
+            end
+        local Inv_Rebuild_base = Inv.Rebuild
+            or function ()
+                return ""
+            end
 
         function Inv:RebuildExtraSlots(self)
             -- See `scripts/widgets/inventorybar.lua:212-217`.
@@ -100,20 +102,19 @@ local function InitSlot()
                 local equip_w = num_equip * W + (num_equip - 1) * SEP                                       -- 装备栏宽度
                 local buttons_w = num_equipintersep * W                                                     -- 最后的按钮宽度
 
-                local offset_x = inventory_w + equip_w + buttons_w                                          -- 总宽度
+                local offset_x = inventory_w + equip_w + buttons_w -- 总宽度
                 return offset_x
             end
 
             local num_slots = self.owner.replica.inventory:GetNumSlots()                                         -- 物品栏个数
             local num_equip = #self
-                .equipslotinfo                                                                                   -- 装备栏个数
+                .equipslotinfo                                                                -- 装备栏个数
             local do_self_inspect = not (self.controller_build or GLOBAL.GetGameModeProperty("no_avatar_popup")) -- 不知道啥意思
 
-            local scale_default = 1.22                                                                           -- See `scripts/widgets/inventorybar.lua:261-262`. 原始缩放值
-            local total_w_default = CalcTotalWidth(num_slots, 3, 1)                                              -- 默认宽度
-            local total_w_real = CalcTotalWidth(num_slots, num_equip, do_self_inspect and 1 or 0)                -- 现在的宽度
-            local scale_real = scale_default /
-                (total_w_default / total_w_real)                                                                 -- 稍微改了下 我有强迫症 我想把 total_w_default 放中间
+            local scale_default = 1.22                                                            -- See `scripts/widgets/inventorybar.lua:261-262`. 原始缩放值
+            local total_w_default = CalcTotalWidth(num_slots, 3, 1)                               -- 默认宽度
+            local total_w_real = CalcTotalWidth(num_slots, num_equip, do_self_inspect and 1 or 0) -- 现在的宽度
+            local scale_real = scale_default / (total_w_default / total_w_real)                   -- 稍微改了下 我有强迫症 我想把 total_w_default 放中间
 
             -- 添加额外格子
             if self.addextraslots == nil then
@@ -197,7 +198,7 @@ local function InitPrefab()
                 -- 装备背包 大概意思就是装备背包时重写人物形象
                 local function bagonequip(inst, owner)
                     if DST then
-                        local skin_build = inst:GetSkinBuild()    -- 皮肤构造器(用这个api来生成新贴图)
+                        local skin_build = inst:GetSkinBuild() -- 皮肤构造器(用这个api来生成新贴图)
                         local animState = owner.AnimState
                         local old_swap = symbol_back[inst.prefab] -- 当前贴图名称
                         local place_swap = "swap_body_tall"       -- 将要替换的贴图名称(据说只有一个 只能给背包用)
@@ -251,7 +252,7 @@ local function InitPrefab()
         end
 
         -- 为其他物品智能分配插槽
-        AddPrefabPostInitAny(function(inst)
+        AddPrefabPostInitAny(function (inst)
             if not (GLOBAL.TheWorld.ismastersim and inst.components.equippable ~= nil) then
                 return
             end
@@ -261,9 +262,9 @@ local function InitPrefab()
             -- 一些模组物品会被误以为是额外的装备 但是它实际上应该在服装栏
             local is_force_symbol_belly = force_symbol_belly[prefab] -- 是否属于强制服装物品
             if is_force_symbol_belly then
-                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY or
-                    GLOBAL.EQUIPSLOTS
-                    .BODY -- 优先分配到服装栏 如果没有开启服装栏就分配到身体栏
+                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
+                    or GLOBAL.EQUIPSLOTS
+                        .BODY -- 优先分配到服装栏 如果没有开启服装栏就分配到身体栏
                 return
             end
 
@@ -275,8 +276,9 @@ local function InitPrefab()
             end
 
             -- 如果已经进行了适配的物品也不进行智能适配
-            local is_adaptation = symbol_belly[prefab] or symbol_neck[prefab] or symbol_back[prefab] or
-                force_symbol_body[prefab] or force_symbol_belly[prefab]
+            local is_adaptation = symbol_belly[prefab] or symbol_neck[prefab]
+                or symbol_back[prefab] or force_symbol_body[prefab]
+                or force_symbol_belly[prefab]
             if is_force_symbol_body then
                 return
             end
@@ -349,26 +351,25 @@ local function RepairExtra()
             local headitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.HEAD)
             local bellyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BELLY)
 
-            if backitem ~= nil and backitem.replica and backitem.replica.container and backitem.replica.container._isopen then
+            if backitem ~= nil and backitem.replica
+                and backitem.replica.container and backitem.replica.container._isopen then
                 return backitem.replica.container
-            elseif bodyitem ~= nil and bodyitem.replica and bodyitem.replica.container and bodyitem.replica.container._isopen then
+            elseif bodyitem ~= nil and bodyitem.replica
+                and bodyitem.replica.container and bodyitem.replica.container._isopen then
                 return bodyitem.replica.container
-            elseif headitem ~= nil and headitem.replica and headitem.replica.container and headitem.replica.container._isopen then
+            elseif headitem ~= nil and headitem.replica
+                and headitem.replica.container and headitem.replica.container._isopen then
                 return headitem.replica.container
-            elseif bellyitem ~= nil and bellyitem.replica and bellyitem.replica.container and bellyitem.replica.container._isopen then
+            elseif bellyitem ~= nil and bellyitem.replica
+                and bellyitem.replica.container and bellyitem.replica.container._isopen then
                 return bellyitem.replica.container
             end
         end
 
         -- 定义相关的方法然后遍历修改
         local funclist = {
-            "Has",
-            "UseItemFromInvTile",
-            "ControllerUseItemOnItemFromInvTile",
-            "ControllerUseItemOnSelfFromInvTile",
-            "ControllerUseItemOnSceneFromInvTile",
-            "ReceiveItem",
-            "RemoveIngredients"
+            "Has", "UseItemFromInvTile", "ControllerUseItemOnItemFromInvTile", "ControllerUseItemOnSelfFromInvTile",
+            "ControllerUseItemOnSceneFromInvTile", "ReceiveItem", "RemoveIngredients"
         }
 
         -- 修改指定的方法中的GetOverflowContainer
@@ -406,32 +407,59 @@ local function RepairExtra()
 
     -- 开启护符栏后的修复
     if GLOBAL.EQUIPSLOTS.NECK then
-
-        -- 红护符复活
-        AddStategraphPostInit("wilson", function(self)
-            local original_amulet_rebirth = self.states["amulet_rebirth"]
-            local original_amulet_rebirth_onexit = original_amulet_rebirth.onexit
-            original_amulet_rebirth.onexit = function(inst)
+        -- 红护符复活：在 SG 状态退出时移除 NECK 槽护符（复用原版生效的 SG hook 方案，确保消耗正确）
+        -- 并手动清理 swap_body 视觉符号，解决贴图残留问题
+        AddStategraphPostInit("wilson", function (self)
+            local rebirth_state = self.states["amulet_rebirth"] or self.states["rebirth"]
+            if not rebirth_state then
+                return
+            end
+            local original_rebirth_onexit = rebirth_state.onexit
+            rebirth_state.onexit = function (inst)
                 local item = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.NECK)
                 if item and item.prefab == "amulet" then
                     item = inst.components.inventory:RemoveItem(item)
                     if item then
+                        -- 在护符销毁前清理视觉符号（原版 onunequip_red 在重生状态会跳过清理）
+                        inst.AnimState:ClearOverrideSymbol("swap_body")
                         item:Remove()
                         item.persists = false
                     end
                 end
-                original_amulet_rebirth_onexit(inst)
+                original_rebirth_onexit(inst)
             end
         end)
+
+        -- 建造护符在制作栏显示 -20% 折扣标记（安全回退 BODY→NECK，不修改函数签名）
+        local CraftingInv = GLOBAL.require "widgets/redux/craftingmenu_ingredients"
+        local SetRecipe_base = CraftingInv.SetRecipe
+        CraftingInv.SetRecipe = function (self, ...)
+            local inventory = self.owner.replica.inventory
+            local orig_GetEquippedItem = inventory.GetEquippedItem
+            inventory.GetEquippedItem = function (self, eslot)
+                if eslot == GLOBAL.EQUIPSLOTS.BODY then
+                    -- 先直接查 NECK 槽（绕过 Bug 3 补丁的 BACK→BELLY 回退链）
+                    local item = orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.NECK)
+                    if item ~= nil then
+                        return item
+                    end
+                    -- NECK 为空，再走 BODY 查询（含 Bug 3 回退）
+                    return orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.BODY)
+                end
+                return orig_GetEquippedItem(self, eslot)
+            end
+            SetRecipe_base(self, ...)
+            inventory.GetEquippedItem = orig_GetEquippedItem
+        end
     end
 
     -- 开启背包栏后的修复
     if GLOBAL.EQUIPSLOTS.BACK then
         -- 对人物物品变化添加额外的事件
-        AddComponentPostInit("inventory", function(self, inst)
+        AddComponentPostInit("inventory", function (self, inst)
             local original_Equip = self.Equip
             -- 这个是装备背包的方法
-            self.Equip = function(self, item, old_to_active)
+            self.Equip = function (self, item, old_to_active)
                 if original_Equip(self, item, old_to_active) and item and item.components and item.components.equippable then
                     local eslot = item.components.equippable.equipslot
                     if self.equipslots[eslot] ~= item then
@@ -445,25 +473,22 @@ local function RepairExtra()
                 end
             end
             -- 监听背包卸载
-            self.inst:ListenForEvent(
-                "unequip",
-                function(inst, data)
-                    local inventory = DST and inst.replica.inventory or inst.components.inventory
-                    if inventory ~= nil then
-                        local equipment = inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
-                        if equipment and equipment.components.equippable.onequipfn then
-                            if equipment.task ~= nil then
-                                equipment.task:Cancel()
-                                equipment.task = nil
-                            end
-                            equipment.components.equippable.onequipfn(equipment, inst)
+            self.inst:ListenForEvent("unequip", function (inst, data)
+                local inventory = DST and inst.replica.inventory or inst.components.inventory
+                if inventory ~= nil then
+                    local equipment = inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                    if equipment and equipment.components.equippable.onequipfn then
+                        if equipment.task ~= nil then
+                            equipment.task:Cancel()
+                            equipment.task = nil
                         end
+                        equipment.components.equippable.onequipfn(equipment, inst)
                     end
                 end
-            )
+            end)
 
             -- 调整物品叠加到背包时的逻辑
-            self.GetOverflowContainer = function()
+            self.GetOverflowContainer = function ()
                 if self.ignoreoverflow then
                     return
                 end
@@ -488,28 +513,27 @@ local function RepairExtra()
     if GLOBAL.EQUIPSLOTS.BELLY then
         -- 5. 当你给“寄居蟹隐士”一件外套时，她会尝试使用旧的装备槽。让我们也用新的.
         -- See `scripts/prefabs/hermitcrab.lua`.
-        AddPrefabPostInit("hermitcrab", function(inst)
+        AddPrefabPostInit("hermitcrab", function (inst)
             if not GLOBAL.TheWorld.ismastersim then
                 return
             end
 
             local function iscoat(item)
-                return item.components.insulator and
-                    item.components.insulator:GetInsulation() >= GLOBAL.TUNING.INSULATION_SMALL and
-                    item.components.insulator:GetType() == GLOBAL.SEASONS.WINTER and
-                    item.components.equippable and
-                    item.components.equippable.equipslot == EQUIPSLOTS_MAP.BELLY
+                return item.components.insulator and item.components.insulator:GetInsulation()
+                        >= GLOBAL.TUNING.INSULATION_SMALL
+                    and item.components.insulator:GetType() == GLOBAL.SEASONS.WINTER and item.components.equippable
+                    and item.components.equippable.equipslot == EQUIPSLOTS_MAP.BELLY
             end
 
             local function getcoat(inst1)
                 local equipped = inst1.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
-                return inst1.components.inventory:FindItem(function(testitem) return iscoat(testitem) end)
+                return inst1.components.inventory:FindItem(function (testitem) return iscoat(testitem) end)
                     or (equipped and iscoat(equipped) and equipped)
             end
 
             -- 添加一个额外的项目监听器.
             -- See `scripts/prefabs/hermitcrab.lua:1011`.
-            inst:ListenForEvent("itemget", function(_, data)
+            inst:ListenForEvent("itemget", function (_, data)
                 if iscoat(data.item) and GLOBAL.TheWorld.state.issnowing then
                     local TASKS_GIVE_PUFFY_VEST = 11 -- Copy from `prefabs/hermitcrab.lua:57`.
                     inst.components.inventory:Equip(data.item)
@@ -520,7 +544,7 @@ local function RepairExtra()
             -- 覆盖 `ShouldAcceptItem`.
             -- See `scripts/prefabs/hermitcrab.lua:122-123,127`.
             local ShouldAcceptItem_Base = inst.components.trader.test
-            inst.components.trader:SetAcceptTest(function(inst1, item)
+            inst.components.trader:SetAcceptTest(function (inst1, item)
                 return (iscoat(item) and GLOBAL.TheWorld.state.issnowing and not getcoat(inst1))
                     or ShouldAcceptItem_Base(inst1, item)
             end)
@@ -528,14 +552,16 @@ local function RepairExtra()
             -- 覆盖 `OnRefuseItem`.
             -- See `scripts/prefabs/hermitcrab.lua:144-146`.
             local OnRefuseItem_Base = inst.components.trader.onrefuse
-            inst.components.trader.onrefuse = function(inst1, giver, item)
+            inst.components.trader.onrefuse = function (inst1, giver, item)
                 if iscoat(item) then
                     if getcoat(inst1) then
-                        inst1.components.npc_talker:Say(GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT_HASONE
-                            [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT_HASONE)])
+                        inst1.components.npc_talker:Say(GLOBAL.STRINGS
+                                .HERMITCRAB_REFUSE_COAT_HASONE
+                                [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT_HASONE)])
                     elseif not GLOBAL.TheWorld.state.issnowing then
-                        inst1.components.npc_talker:Say(GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT
-                            [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT)])
+                        inst1.components.npc_talker:Say(GLOBAL.STRINGS
+                                .HERMITCRAB_REFUSE_COAT
+                                [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT)])
                     end
                 end
                 OnRefuseItem_Base(inst, giver, item)
@@ -547,17 +573,16 @@ local function RepairExtra()
             inst.getcoat = getcoat
         end)
 
-
         -- 6. “寄居蟹隐士”有一个大脑，可以让她在旧装备槽中装备/取消装备外套。让我们也用新的.
         -- See `scripts/brains/hermitcrabbrain.lua`.
-        AddBrainPostInit("hermitcrabbrain", function(brain)
+        AddBrainPostInit("hermitcrabbrain", function (brain)
             local function using_coat(inst)
                 local equipped = inst.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
                 return equipped and inst.iscoat(equipped) or nil
             end
 
             local function has_coat(inst)
-                return inst.components.inventory:FindItem(function(testitem) return inst.iscoat(testitem) end)
+                return inst.components.inventory:FindItem(function (testitem) return inst.iscoat(testitem) end)
             end
 
             local function EquipCoat(inst)
@@ -575,24 +600,20 @@ local function RepairExtra()
             local new_children = {}
             for _, child in ipairs(brain.bt.root.children) do
                 if child.name == "Sequence" and child.children[1].name == "coat" then
-                    table.insert(new_children,
-                        GLOBAL.IfNode(
-                            function()
-                                return not brain.inst.sg:HasStateTag("busy") and GLOBAL.TheWorld.state.issnowing and
-                                    has_coat(brain.inst) and not using_coat(brain.inst)
-                            end,
-                            "coat",
-                            GLOBAL.DoAction(brain.inst, EquipCoat, "coat", true))
+                    table.insert(
+                        new_children,
+                        GLOBAL.IfNode(function ()
+                            return not brain.inst.sg:HasStateTag("busy") and GLOBAL.TheWorld.state.issnowing
+                                and has_coat(brain.inst) and not using_coat(brain.inst)
+                        end, "coat", GLOBAL.DoAction(brain.inst, EquipCoat, "coat", true))
                     )
                 elseif child.name == "Sequence" and child.children[1].name == "stop coat" then
-                    table.insert(new_children,
-                        GLOBAL.IfNode(
-                            function()
-                                return not brain.inst.sg:HasStateTag("busy") and
-                                    not GLOBAL.TheWorld.state.issnowing and using_coat(brain.inst)
-                            end,
-                            "stop coat",
-                            GLOBAL.DoAction(brain.inst, UnequipCoat, "stop coat", true))
+                    table.insert(
+                        new_children,
+                        GLOBAL.IfNode(function ()
+                            return not brain.inst.sg:HasStateTag("busy") and not GLOBAL.TheWorld.state.issnowing
+                                and using_coat(brain.inst)
+                        end, "stop coat", GLOBAL.DoAction(brain.inst, UnequipCoat, "stop coat", true))
                     )
                 else
                     table.insert(new_children, child)
@@ -606,7 +627,7 @@ RepairExtra()
 
 -- 鼠标显示物品代码
 local function HoverItemCode()
-    GLOBAL.setmetatable(env, { __index = function(t, k) return GLOBAL.rawget(GLOBAL, k) end })
+    GLOBAL.setmetatable(env, { __index = function (t, k) return GLOBAL.rawget(GLOBAL, k) end })
 
     local function GetBuild(inst)
         local strnn = ""
@@ -624,9 +645,9 @@ local function HoverItemCode()
         return strnn
     end
 
-    AddClassPostConstruct("widgets/hoverer", function(self)
+    AddClassPostConstruct("widgets/hoverer", function (self)
         local old_SetString = self.text.SetString
-        self.text.SetString = function(text, str)
+        self.text.SetString = function (text, str)
             local target = TheInput:GetHUDEntityUnderMouse()
             if target ~= nil then
                 target = target.widget ~= nil and target.widget.parent ~= nil and target.widget.parent.item
