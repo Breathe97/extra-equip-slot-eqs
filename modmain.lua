@@ -137,16 +137,16 @@ local function InitSlot()
             -- 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
             if GLOBAL.EQUIPSLOTS.BACK ~= nil and num_equip > 3 and self.integrated_arrow then
                 local x = self.inv[#self.inv]:GetPosition().x + W * 0.5 + INTERSEP + 61 -- 原始位置
-                local offset_x = (W + SEP) * (num_equip - 2)
 
-                -- 原图宽度 = 8.5格子 + 1sep + 8.5格子
-                local tex_w = 1.7 * W + SEP -- 134.4
-                local new_w = num_equip * W + (num_equip - 1) * SEP
+                -- 原图宽度 = 1格子 + 1sep + 0.5格子
+                local tex_w = 1.5 * W + 1 * SEP -- 127.6
+                local new_w = (num_equip - 0.5) * W + (num_equip - 1) * SEP
                 local scale_x = new_w / tex_w
                 local compensation = (new_w - tex_w) / 2
+                local offset_x = x + compensation
 
                 self.integrated_arrow:SetScale(scale_x, 1, 1)
-                self.integrated_arrow:SetPosition(x + compensation, 8)
+                self.integrated_arrow:SetPosition(offset_x, 8)
             end
         end
 
