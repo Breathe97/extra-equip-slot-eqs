@@ -196,27 +196,15 @@ local function InitPrefab()
             -- 初始化背包栏物品
             local function InitBackPrefab()
                 -- 装备背包 大概意思就是装备背包时重写人物形象
+                -- 背包视觉由 orig_onequip 通过 swap_body 处理（8方向完整支持颜色）
+                -- bagonequip 仅开容器，不额外设 swap_body_tall（该符号背面颜色渲染有缺陷）
                 local function bagonequip(inst, owner)
-                    if DST then
-                        local skin_build = inst:GetSkinBuild() -- 皮肤构造器(用这个api来生成新贴图)
-                        local animState = owner.AnimState
-                        local old_swap = symbol_back[inst.prefab] -- 当前贴图名称
-                        local place_swap = "swap_body_tall"       -- 将要替换的贴图名称(据说只有一个 只能给背包用)
-                        local new_swap = "swap_" .. old_swap      -- 新的贴图名称
-                        -- 下面是啥意思不知道 就是把变量抽离了一下 看起来只有一行 好看
-                        if skin_build ~= nil then
-                            owner:PushEvent("equipskinneditem", inst:GetSkinName())
-                            animState:OverrideItemSkinSymbol(old_swap, skin_build, old_swap, inst.GUID, new_swap)
-                            animState:OverrideItemSkinSymbol(place_swap, skin_build, "swap_body", inst.GUID, new_swap)
-                        else
-                            animState:OverrideSymbol(place_swap, old_swap, "backpack")
-                            animState:OverrideSymbol(place_swap, old_swap, "swap_body")
-                        end
-                    end
                     if not DST then
                         owner.components.inventory:SetOverflow(nil)
                     end
-                    inst.components.container:Open(owner)
+                    if inst.components.container then
+                        inst.components.container:Open(owner)
+                    end
                 end
                 -- 卸载背包 大概意思就是卸载背包时清除之前的形象
                 local function bagonunequip(inst, owner)
@@ -226,20 +214,31 @@ local function InitPrefab()
                             owner:PushEvent("unequipskinneditem", inst:GetSkinName())
                         end
                     end
-                    owner.AnimState:ClearOverrideSymbol("swap_body_tall")
+                    -- orig_onunequip 会关容器并清 swap_body，这里仅清可能残留的符号
                     owner.AnimState:ClearOverrideSymbol("backpack")
                     if not DST then
                         owner.components.inventory:SetOverflow(inst)
                     end
-                    inst.components.container:Close(owner)
                 end
                 -- 给背包分配插槽
                 local function InitBack(inst)
+                    local orig_onequip = inst.components.equippable.onequipfn
+                    local orig_onunequip = inst.components.equippable.onunequipfn
                     inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BODY
-                    -- 监听背包装备卸下事件
+                    -- 监听背包装备卸下事件（保留原版 onequip/onunequip 逻辑，如皮肤变色等）
                     if DST then
-                        inst.components.equippable:SetOnEquip(bagonequip)
-                        inst.components.equippable:SetOnUnequip(bagonunequip)
+                        inst.components.equippable:SetOnEquip(function (_inst, owner)
+                            if orig_onequip then
+                                orig_onequip(_inst, owner) -- 先执行原版（处理视觉、颜色、皮肤）
+                            end
+                            bagonequip(_inst, owner) -- 再开容器
+                        end)
+                        inst.components.equippable:SetOnUnequip(function (_inst, owner)
+                            bagonunequip(_inst, owner) -- 先关容器
+                            if orig_onunequip then
+                                orig_onunequip(_inst, owner) -- 再执行原版（清理视觉符号）
+                            end
+                        end)
                     end
                 end
 
