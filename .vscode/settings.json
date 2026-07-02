@@ -1,7 +1,7 @@
 {
   "Lua.runtime.version": "Lua 5.1",
   "Lua.workspace.library": [
-    "D:\\DST_content\\lsp-dst\\scripts"
+    "${workspaceFolder}/lsp-dst/scripts"
   ],
   "Lua.diagnostics.globals": [
     "locale",
