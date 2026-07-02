@@ -106,15 +106,15 @@ configuration_options = {
             {
                 description = "否",
                 data = false,
-                hover = "衣服目前没有一个比较好的适配办法，所以暂时不支持。"
+                hover = "下都下了，你确定不开启？"
             },
-            -- {
-            --     description = "是",
-            --     data = true,
-            --     hover = "自动识别未知的模组物品并分配至服装栏。"
-            -- }
+            {
+                description = "是",
+                data = true,
+                hover = "自动识别未知的模组物品并分配至服装栏。"
+            }
         },
-        default = false
+        default = true
     },
     {
         name = "AUTO_SLOTS_NECK",

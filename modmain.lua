@@ -286,7 +286,7 @@ local function InitPrefab()
             local is_adaptation = symbol_belly[prefab] or symbol_neck[prefab]
                 or symbol_back[prefab] or force_symbol_body[prefab]
                 or force_symbol_belly[prefab]
-            if is_force_symbol_body then
+            if is_adaptation then
                 return
             end
 
@@ -296,47 +296,32 @@ local function InitPrefab()
                 return
             end
 
-            -- 护甲类优先不进行调整
-            local is_armor = string.find(prefab, "armor") -- 是否为护甲
-            -- 如果是护甲则不进行分配
-            if is_armor ~= nil then
+            -- ── 自动分配（基于组件/标签） ──
+
+            -- 1. 护符栏：有 amulet 标签 → 无论是否有护甲都去 NECK
+            if GLOBAL.EQUIPSLOTS.NECK and AUTO_SLOTS_NECK then
+                if inst:HasTag("amulet") then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK
+                    return
+                end
+            end
+
+            -- 2. 有 armor 组件 → 留在 BODY，不接受自动分配
+            if inst.components.armor ~= nil then
                 return
             end
 
-            -- 自动分配服装栏
-            if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
-                -- 自动匹配腹部上的物品 暂时不支持
-                local function AutoMatchBelly()
-                    local is_clothing = string.find(prefab, "clothing") -- 是否为服装
-                    if is_clothing then
-                        inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
-                    end
-                end
-                AutoMatchBelly()
-            end
-
-            -- 自动分配护符栏
-            if GLOBAL.EQUIPSLOTS.NECK and AUTO_SLOTS_NECK then
-                -- 自动匹配脖子上的物品
-                local function AutoMatchNeck()
-                    local is_amulet = string.find(prefab, "amulet") -- 是否为护符
-                    if is_amulet then
-                        inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK
-                    end
-                end
-                AutoMatchNeck()
-            end
-
-            -- 自动分配背包栏
+            -- 3. 背包栏：无 armor + 有 container → BACK
             if GLOBAL.EQUIPSLOTS.BACK and AUTO_SLOTS_BACK then
-                -- 自动匹配背上的物品
-                local function AutoMatchBack()
-                    local is_back = string.find(prefab, "back") -- 是否为背上物品
-                    if is_back then
-                        inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK
-                    end
+                if inst.components.container ~= nil then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK
+                    return
                 end
-                AutoMatchBack()
+            end
+
+            -- 4. 服装栏：无 armor + 无 container → BELLY
+            if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
+                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
             end
         end)
     end
