@@ -1,0 +1,3 @@
+[submodule "lsp-dst"]
+	path = lsp-dst
+	url = https://gitee.com/b1inkie/lsp-dst.git
