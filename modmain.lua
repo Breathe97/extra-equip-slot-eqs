@@ -358,7 +358,7 @@ local function RepairExtra()
             end
         end
 
-        -- 定义需要修补 GetOverflowContainer upvalue 的方法
+        -- 定义相关的方法然后遍历修改
         local funclist = {
             "Has", "UseItemFromInvTile", "ControllerUseItemOnItemFromInvTile", "ControllerUseItemOnSelfFromInvTile",
             "ControllerUseItemOnSceneFromInvTile", "ReceiveItem", "RemoveIngredients"
@@ -372,33 +372,15 @@ local function RepairExtra()
             for entry in path:gmatch("[^%.]+") do
                 i = 1
                 prev = val
-                local found = false
                 while true do
                     local name, value = GLOBAL.debug.getupvalue(val, i)
                     if name == entry then
                         val = value
-                        found = true
                         break
                     elseif name == nil then
-                        break
+                        return
                     end
                     i = i + 1
-                end
-                -- 按名称查找失败时，按位置索引遍历，取第一个 function/table 类型的 upvalue 作为 fallback
-                if not found then
-                    i = 1
-                    prev = val
-                    while true do
-                        local name, value = GLOBAL.debug.getupvalue(val, i)
-                        if name == nil then
-                            return
-                        end
-                        if type(value) == "function" or type(value) == "table" then
-                            val = value
-                            break
-                        end
-                        i = i + 1
-                    end
                 end
             end
             GLOBAL.debug.setupvalue(prev, i, new)
@@ -409,76 +391,11 @@ local function RepairExtra()
             end
         end
 
-        -- Option B: 为关键函数创建替换包装，确保使用正确的 GetOverflowContainer
-        local patchedGetOverflowContainer = GetOverflowContainer
-        if inst.Has then
-            local orig_Has = inst.Has
-            inst.Has = function(_inst, prefab, amount, checkallcontainers)
-                local iscrafting = checkallcontainers
-                local count = _inst._activeitem ~= nil and _inst._activeitem.prefab == prefab and not (iscrafting and _inst._activeitem:HasTag("nocrafting")) and (_inst._activeitem.replica.stackable and _inst._activeitem.replica.stackable:StackSize() or 1) or 0
-                for i, v in ipairs(_inst._items) do
-                    local item = v:value()
-                    if item ~= nil and item ~= _inst._activeitem and item.prefab == prefab and not (iscrafting and item:HasTag("nocrafting")) then
-                        count = count + (item.replica.stackable and item.replica.stackable:StackSize() or 1)
-                    end
-                end
-                local overflow = patchedGetOverflowContainer(_inst)
-                if overflow ~= nil then
-                    local overflowhas, overflowcount = overflow:Has(prefab, amount, iscrafting)
-                    count = count + overflowcount
-                end
-                if checkallcontainers then
-                    local inventory_replica = _inst._parent and _inst._parent.replica.inventory
-                    local containers = inventory_replica and inventory_replica:GetOpenContainers()
-                    if containers then
-                        for container_inst in pairs(containers) do
-                            local container = container_inst.replica.container or container_inst.replica.inventory
-                            if container and container ~= overflow and not container.excludefromcrafting and (container.IsReadOnlyContainer == nil or not container:IsReadOnlyContainer()) then
-                                local containerhas, containercount = container:Has(prefab, amount, iscrafting)
-                                count = count + containercount
-                            end
-                        end
-                    end
-                end
-                return count >= amount, count
-            end
-        end
-
         if not IsServer and not GLOBAL.TheWorld.ismastersim then
             inst.GetOverflowContainer = GetOverflowContainer
         end
     end
     AddPrefabPostInit("inventory_classified", PrefabPostInit)
-
-    -- 第三方模组兼容：补丁 replica.inventory.GetEquippedItem
-    -- 当查询 BODY 插槽且为空时，自动回查自定义插槽（BACK/NECK/BELLY）
-    -- 这样像"黑化行为学"这类依赖官方 API 的模组无需修改就能找到自定义插槽中的物品
-    AddComponentPostInit("inventory_replica", function(self)
-        local orig_GetEquippedItem = self.GetEquippedItem
-        self.GetEquippedItem = function(self, eslot)
-            if eslot == GLOBAL.EQUIPSLOTS.BODY then
-                local item = orig_GetEquippedItem(self, eslot)
-                if item ~= nil then
-                    return item
-                end
-                -- BODY 为空时，回查自定义插槽
-                if GLOBAL.EQUIPSLOTS.BACK then
-                    item = orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.BACK)
-                    if item ~= nil then return item end
-                end
-                if GLOBAL.EQUIPSLOTS.NECK then
-                    item = orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.NECK)
-                    if item ~= nil then return item end
-                end
-                if GLOBAL.EQUIPSLOTS.BELLY then
-                    item = orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.BELLY)
-                    if item ~= nil then return item end
-                end
-                return nil
-            end
-            return orig_GetEquippedItem(self, eslot)
-        end
-    end)
 
     -- 开启护符栏后的修复
     if GLOBAL.EQUIPSLOTS.NECK then
@@ -542,9 +459,9 @@ local function RepairExtra()
                             self.inst:PushEvent("setoverflow", { overflow = item })
                         end
                     end
-                    return result
+                    return true
                 else
-                    return result
+                    return
                 end
             end
             -- 监听背包卸载
@@ -579,26 +496,6 @@ local function RepairExtra()
                     return backitem.components.container
                 elseif bodyitem ~= nil and bodyitem.components.container and isOpencontainers(self.inst, bodyitem) then
                     return bodyitem.components.container
-                end
-            end
-
-            -- 修复 FindItem：确保也能搜索到自定义装备插槽（如 BACK）中的容器物品
-            if self.FindItem then
-                local orig_FindItem = self.FindItem
-                self.FindItem = function(self, fn, ...)
-                    local result = orig_FindItem(self, fn, ...)
-                    if result then
-                        return result
-                    end
-                    -- 额外检查 BACK 插槽的容器
-                    local backitem = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
-                    if backitem ~= nil and backitem.components.container then
-                        result = backitem.components.container:FindItem(fn)
-                        if result then
-                            return result
-                        end
-                    end
-                    return nil
                 end
             end
         end)
@@ -682,7 +579,7 @@ local function RepairExtra()
                                 [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT)])
                     end
                 end
-                OnRefuseItem_Base(inst1, giver, item)
+                OnRefuseItem_Base(inst, giver, item)
             end
 
             -- 覆盖 `iscoat`.
