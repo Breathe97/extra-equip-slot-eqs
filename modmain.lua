@@ -514,6 +514,29 @@ local function RepairExtra()
                 end
             end
         end)
+
+        -- 监听从鬼魂复活事件，重新打开背包容器
+        -- 大门/传送阵/肉块雕像复活时，引擎会关闭所有容器，护符复活没有这个问题
+        AddPrefabPostInitAny(function(inst)
+            if not GLOBAL.TheWorld.ismastersim then
+                return
+            end
+            -- 只对玩家角色生效（有 inventory 和 health 组件的就是玩家）
+            if inst.components.inventory ~= nil and inst.components.health ~= nil then
+                inst:ListenForEvent("respawnfromghost", function()
+                    -- 延迟一帧确保复活流程完全结束
+                    inst:DoTaskInTime(0, function()
+                        local backitem = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                        if backitem and backitem.components.container then
+                            -- 检查容器是否已关闭，如果关闭则重新打开
+                            if not backitem.components.container:IsOpen() then
+                                backitem.components.container:Open(inst)
+                            end
+                        end
+                    end)
+                end)
+            end
+        end)
     end
 
     -- 参考于 2950481491
