@@ -1,0 +1,26 @@
+{
+  "Lua.runtime.version": "Lua 5.1",
+  "Lua.workspace.library": [
+    "D:\\DST_content\\lsp-dst\\scripts"
+  ],
+  "Lua.diagnostics.globals": [
+    "locale",
+    "name",
+    "description",
+    "author",
+    "version",
+    "api_version",
+    "forumthread",
+    "dst_compatible",
+    "dont_starve_compatible",
+    "reign_of_giants_compatible",
+    "all_clients_require_mod",
+    "icon_atlas",
+    "icon",
+    "server_filter_tags",
+    "configuration_options",
+    "Assets",
+    "EQUIPSLOTS_MAP",
+    "env"
+  ]
+}
