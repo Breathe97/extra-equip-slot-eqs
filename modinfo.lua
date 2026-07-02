@@ -1,7 +1,6 @@
 name = "额外的装备栏" -- mod的名字
 
-description =
-[[
+description = [[
 󰀜 为人物添加额外的服装栏、护符栏、背包栏。
 󰀜 默认：武器 + 护甲 + 头盔 + 服装 + 护符 + 背包。
 󰀜 大理石占据护甲而不是背包。
@@ -19,28 +18,27 @@ description =
                     󰀜󰀝󰀀󰀞󰀘󰀁󰀟󰀠󰀡󰀂󰀪󰀕󰀫󰀖󰀛󰀬󰀭󰀮󰀰󰀉󰀚󰀊󰀋󰀌󰀍
 ]]
 
-priority = 1                       -- 优先级 默认0 值越大 优先级越低
+priority = 1 -- 优先级 默认0 值越大 优先级越低
 
-author = "Breathe"                 -- mod的作者
+author = "Breathe" -- mod的作者
 
-version = "2.0.5"                  -- mod的版本号
+version = "2.0.5" -- mod的版本号
 
-api_version = 10                   -- API版本号
+api_version = 10 -- API版本号
 
-forumthread = ""                   -- 留空就行了
+forumthread = "" -- 留空就行了
 
 dst_compatible = true              -- 兼容联机
 dont_starve_compatible = false     -- 兼容单机
 reign_of_giants_compatible = false -- 兼容巨人
 
-all_clients_require_mod = true     -- 客户端mod就false,服务端就true。
+all_clients_require_mod = true -- 客户端mod就false,服务端就true。
 
 -- 为mod指定自定义图标!
 icon_atlas = "preview.xml"
 icon = "preview.tex"
 
 server_filter_tags = { "refresh", "Krampus", "private" } -- 服务器标签可以不写
-
 
 configuration_options = {
     { name = "", label = "基本配置", hover = "", options = { { description = "", data = 0 } }, default = 0 },
@@ -153,7 +151,13 @@ configuration_options = {
         default = true
     },
 
-    { name = "", label = "其他配置 (推荐默认)", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+    {
+        name = "",
+        label = "其他配置 (推荐默认)",
+        hover = "",
+        options = { { description = "", data = 0 } },
+        default = 0
+    },
     {
         name = "HOVER_ITEM_CODE",
         label = "物品信息",
@@ -172,7 +176,13 @@ configuration_options = {
         },
         default = false
     },
-    { name = "", label = "Uncompromising-永不妥协", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+    {
+        name = "",
+        label = "Uncompromising-永不妥协",
+        hover = "",
+        options = { { description = "", data = 0 } },
+        default = 0
+    },
     {
         name = "MOD_YBTX_BELLY",
         label = "强制服装栏",
@@ -210,7 +220,13 @@ configuration_options = {
         },
         default = false
     },
-    { name = "", label = "海洋传说-Legend and sea", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+    {
+        name = "",
+        label = "海洋传说-Legend and sea",
+        hover = "",
+        options = { { description = "", data = 0 } },
+        default = 0
+    },
     {
         name = "MOD_HYCS_YHFF",
         label = "雨花·扶风",
@@ -248,7 +264,13 @@ configuration_options = {
         },
         default = true
     },
-    { name = "", label = "鸢一折纸-Tobiichi Origami", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+    {
+        name = "",
+        label = "鸢一折纸-Tobiichi Origami",
+        hover = "",
+        options = { { description = "", data = 0 } },
+        default = 0
+    },
     {
         name = "MOD_YYZZ_MJTS",
         label = "绝灭天使",
@@ -277,13 +299,23 @@ configuration_options = {
     }
 }
 
-
 local isZh = locale == "zh" or locale == "zhr"
 
 -- 非中文
 if not isZh then
     configuration_options = {
-        { name = "", label = "Basic configuration",                        hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "",
+            label = "Basic configuration",
+            hover = "",
+            options = {
+                {
+                    description = "",
+                    data = 0
+                }
+            },
+            default = 0
+        },
         {
             name = "SLOTS_BELLY",
             label = "Clothing section",
@@ -347,7 +379,7 @@ if not isZh then
                     description = "No",
                     data = false,
                     hover = "There is currently no good fitting method for clothes, so it is not supported temporarily."
-                },
+                }
                 -- {
                 --     description = "Yes",
                 --     data = true,
@@ -393,12 +425,22 @@ if not isZh then
             default = true
         },
 
-        { name = "", label = "Other configurations (recommended default)", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "",
+            label = "Other configurations (recommended default)",
+            hover = "",
+            options = {
+                {
+                    description = "",
+                    data = 0
+                }
+            },
+            default = 0
+        },
         {
             name = "HOVER_ITEM_CODE",
             label = "Item information",
-            hover =
-            "After opening, pointing the mouse at the item in the game can view the code information of the item.",
+            hover = "After opening, pointing the mouse at the item in the game can view the code information of the item.",
             options = {
                 {
                     description = "No",
@@ -413,12 +455,17 @@ if not isZh then
             },
             default = false
         },
-        { name = "", label = "Uncompromising-永不妥协", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "",
+            label = "Uncompromising-永不妥协",
+            hover = "",
+            options = { { description = "", data = 0 } },
+            default = 0
+        },
         {
             name = "MOD_YBTX_BELLY",
             label = "Mandatory clothing column",
-            hover =
-            "Forcefully identify breathable vests, soft vests, cool summer clothes, floral shirts, and raincoats in the clothing column",
+            hover = "Forcefully identify breathable vests, soft vests, cool summer clothes, floral shirts, and raincoats in the clothing column",
             options = {
                 {
                     description = "No",
@@ -452,7 +499,13 @@ if not isZh then
             },
             default = false
         },
-        { name = "", label = "海洋传说-Legend and sea", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "",
+            label = "海洋传说-Legend and sea",
+            hover = "",
+            options = { { description = "", data = 0 } },
+            default = 0
+        },
         {
             name = "MOD_HYCS_YHFF",
             label = "雨花·扶风",
@@ -490,7 +543,13 @@ if not isZh then
             },
             default = true
         },
-        { name = "", label = "鸢一折纸-Tobiichi Origami", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "",
+            label = "鸢一折纸-Tobiichi Origami",
+            hover = "",
+            options = { { description = "", data = 0 } },
+            default = 0
+        },
         {
             name = "MOD_YYZZ_MJTS",
             label = "Extinguishing Angel",
