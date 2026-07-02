@@ -18,21 +18,21 @@ description = [[
                     󰀜󰀝󰀀󰀞󰀘󰀁󰀟󰀠󰀡󰀂󰀪󰀕󰀫󰀖󰀛󰀬󰀭󰀮󰀰󰀉󰀚󰀊󰀋󰀌󰀍
 ]]
 
-priority = 1 -- 优先级 默认0 值越大 优先级越低
+priority = 1                       -- 优先级 默认0 值越大 优先级越低
 
-author = "Breathe" -- mod的作者
+author = "Breathe"                 -- mod的作者
 
-version = "2.0.5" -- mod的版本号
+version = "2.0.5"                  -- mod的版本号
 
-api_version = 10 -- API版本号
+api_version = 10                   -- API版本号
 
-forumthread = "" -- 留空就行了
+forumthread = ""                   -- 留空就行了
 
 dst_compatible = true              -- 兼容联机
 dont_starve_compatible = false     -- 兼容单机
 reign_of_giants_compatible = false -- 兼容巨人
 
-all_clients_require_mod = true -- 客户端mod就false,服务端就true。
+all_clients_require_mod = true     -- 客户端mod就false,服务端就true。
 
 -- 为mod指定自定义图标!
 icon_atlas = "preview.xml"
@@ -440,7 +440,8 @@ if not isZh then
         {
             name = "HOVER_ITEM_CODE",
             label = "Item information",
-            hover = "After opening, pointing the mouse at the item in the game can view the code information of the item.",
+            hover =
+            "After opening, pointing the mouse at the item in the game can view the code information of the item.",
             options = {
                 {
                     description = "No",
@@ -465,7 +466,8 @@ if not isZh then
         {
             name = "MOD_YBTX_BELLY",
             label = "Mandatory clothing column",
-            hover = "Forcefully identify breathable vests, soft vests, cool summer clothes, floral shirts, and raincoats in the clothing column",
+            hover =
+            "Forcefully identify breathable vests, soft vests, cool summer clothes, floral shirts, and raincoats in the clothing column",
             options = {
                 {
                     description = "No",

@@ -1,19 +1,19 @@
 -- 定义服装栏物品
 return {
     -- 服装栏 原版物品
-    raincoat = "raincoat",                     -- 雨衣
-    onemanband = "onemanband",                 -- 独奏乐器
-    sweatervest = "sweatervest",               -- 犬牙背心
-    beargervest = "beargervest",               -- 熊皮大衣
-    balloonvest = "balloonvest",               -- 充气背心
-    hawaiianshirt = "hawaiianshirt",           -- 花衬衫
-    armorslurper = "armorslurper",             -- 饥饿腰带
-    reflectivevest = "reflectivevest",         -- 清凉夏装
-    trunkvest_summer = "trunkvest_summer",     -- 透气背心
-    trunkvest_winter = "trunkvest_winter",     -- 松软背心
-    carnival_vest_a = "carnival_vest_a",       -- 叽叽喳喳围巾
-    carnival_vest_b = "carnival_vest_b",       -- 叽叽喳喳斗篷
-    carnival_vest_c = "carnival_vest_c",       -- 叽叽喳喳小披肩
+    raincoat = "raincoat",                 -- 雨衣
+    onemanband = "onemanband",             -- 独奏乐器
+    sweatervest = "sweatervest",           -- 犬牙背心
+    beargervest = "beargervest",           -- 熊皮大衣
+    balloonvest = "balloonvest",           -- 充气背心
+    hawaiianshirt = "hawaiianshirt",       -- 花衬衫
+    armorslurper = "armorslurper",         -- 饥饿腰带
+    reflectivevest = "reflectivevest",     -- 清凉夏装
+    trunkvest_summer = "trunkvest_summer", -- 透气背心
+    trunkvest_winter = "trunkvest_winter", -- 松软背心
+    carnival_vest_a = "carnival_vest_a",   -- 叽叽喳喳围巾
+    carnival_vest_b = "carnival_vest_b",   -- 叽叽喳喳斗篷
+    carnival_vest_c = "carnival_vest_c",   -- 叽叽喳喳小披肩
 
     -- costume_fool_body = "costume_fool_body", -- 小丑服
     -- costume_doll_body = "costume_doll_body", -- 玩偶服
@@ -56,6 +56,6 @@ return {
     zhifu = "zhifu",                           -- 战舰少女补给包-秋冬制服
 
     -- Limbus Company 服装（无防御属性）
-    dante_cloth = "dante_cloth",               -- 边狱巴士-但丁的外套
-    sinner_cloth = "sinner_cloth"              -- 边狱巴士-罪人外套
+    dante_cloth = "dante_cloth",  -- 边狱巴士-但丁的外套
+    sinner_cloth = "sinner_cloth" -- 边狱巴士-罪人外套
 }
