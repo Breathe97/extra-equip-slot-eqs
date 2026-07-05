@@ -215,6 +215,8 @@ local function InitPrefab()
                             owner:PushEvent("unequipskinneditem", inst:GetSkinName())
                         end
                     end
+                    -- orig_onunequip 会关容器并清 swap_body，这里仅清可能残留的符号
+                    owner.AnimState:ClearOverrideSymbol("backpack")
                     if not DST then
                         owner.components.inventory:SetOverflow(inst)
                     end
@@ -224,46 +226,18 @@ local function InitPrefab()
                     local orig_onequip = inst.components.equippable.onequipfn
                     local orig_onunequip = inst.components.equippable.onunequipfn
                     inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BODY
+                    -- 监听背包装备卸下事件（保留原版 onequip/onunequip 逻辑，如皮肤变色等）
                     if DST then
                         inst.components.equippable:SetOnEquip(function(_inst, owner)
                             if orig_onequip then
-                                local orig_anim = owner.AnimState
-                                local proxy = setmetatable({}, {
-                                    __index = function(self, key)
-                                        local val = orig_anim[key]
-                                        if type(val) == "function" then
-                                            return function(_, ...)
-                                                val((_ == self and orig_anim or _), ...)
-                                            end
-                                        end
-                                        return val
-                                    end,
-                                })
-                                -- 拦截 swap_body，捕获 build/symbol 后重定向到 swap_body_tall
-                                proxy.OverrideSymbol = function(_, slot, build, symbol)
-                                    orig_anim:OverrideSymbol(slot == "swap_body" and "swap_body_tall" or slot, build,
-                                        symbol)
-                                end
-                                proxy.ClearOverrideSymbol = function(_, slot)
-                                    orig_anim:ClearOverrideSymbol(slot == "swap_body" and "swap_body_tall" or slot)
-                                end
-                                owner.AnimState = proxy
-                                orig_onequip(_inst, owner)
-                                owner.AnimState = orig_anim
+                                orig_onequip(_inst, owner) -- 先执行原版（处理视觉、颜色、皮肤）
                             end
-                            bagonequip(_inst, owner)
+                            bagonequip(_inst, owner)       -- 再开容器
                         end)
                         inst.components.equippable:SetOnUnequip(function(_inst, owner)
-                            bagonunequip(_inst, owner)
+                            bagonunequip(_inst, owner)       -- 先关容器
                             if orig_onunequip then
-                                local orig_anim = owner.AnimState
-                                local proxy = setmetatable({}, { __index = orig_anim })
-                                proxy.ClearOverrideSymbol = function(_, slot)
-                                    orig_anim:ClearOverrideSymbol(slot == "swap_body" and "swap_body_tall" or slot)
-                                end
-                                owner.AnimState = proxy
-                                orig_onunequip(_inst, owner)
-                                owner.AnimState = orig_anim
+                                orig_onunequip(_inst, owner) -- 再执行原版（清理视觉符号）
                             end
                         end)
                     end
