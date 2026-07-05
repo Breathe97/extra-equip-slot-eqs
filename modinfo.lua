@@ -336,7 +336,7 @@ if not isZh then
         },
         {
             name = "SLOTS_NECK",
-            label = "Talisman fence",
+            label = "Talisman slot",
             hover = "Do you want to expand the talisman bar",
             options = {
                 {
@@ -354,7 +354,7 @@ if not isZh then
         },
         {
             name = "SLOTS_BACK",
-            label = "Backpack bar",
+            label = "Backpack slot",
             hover = "Do you want to expand the backpack compartment",
             options = {
                 {
@@ -378,15 +378,15 @@ if not isZh then
                 {
                     description = "No",
                     data = false,
-                    hover = "There is currently no good fitting method for clothes, so it is not supported temporarily."
+                    hover = "TIt's all down, are you sure you don't want to open it?"
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "Automatically identify unknown module items and assign them to the clothing column."
                 }
-                -- {
-                --     description = "Yes",
-                --     data = true,
-                --     hover = "Automatically identify unknown module items and assign them to the clothing column."
-                -- }
             },
-            default = false
+            default = true
         },
         {
             name = "AUTO_SLOTS_NECK",
@@ -485,7 +485,7 @@ if not isZh then
         { name = "", label = "Legion-棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
             name = "MOD_LJ_ZGF",
-            label = "Zigui · Pot",
+            label = " Zigui · Cauldron",
             hover = "Do you recognize the item in the additional equipment compartment",
             options = {
                 {

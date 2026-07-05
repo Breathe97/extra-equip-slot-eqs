@@ -320,9 +320,14 @@ local function InitPrefab()
                 end
             end
 
-            -- 4. 服装栏：无 armor + 无 container → BELLY
+            -- 4. 服装栏：无 armor + 无 container + 有服装属性（防水/保暖/隔热/防雨等）→ BELLY
+            --    不符合服装属性的未知 body 物品则留在 BODY
             if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
-                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
+                if inst.components.waterproofer ~= nil
+                    or inst.components.insulator ~= nil
+                    or inst.components.rainimmunity ~= nil then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
+                end
             end
         end)
     end
