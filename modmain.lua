@@ -215,8 +215,6 @@ local function InitPrefab()
                             owner:PushEvent("unequipskinneditem", inst:GetSkinName())
                         end
                     end
-                    -- orig_onunequip 会关容器并清 swap_body，这里仅清可能残留的符号
-                    owner.AnimState:ClearOverrideSymbol("backpack")
                     if not DST then
                         owner.components.inventory:SetOverflow(inst)
                     end
