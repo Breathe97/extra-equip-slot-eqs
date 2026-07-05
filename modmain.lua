@@ -9,8 +9,6 @@ local AUTO_SLOTS_NECK = GetModConfigData("AUTO_SLOTS_NECK")
 local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
 local HOVER_ITEM_CODE = GetModConfigData("HOVER_ITEM_CODE")
 local MOD_HYCS_YHFF = GetModConfigData("MOD_HYCS_YHFF")
-local MOD_YYZZ_MJTS = GetModConfigData("MOD_YYZZ_MJTS")
-local MOD_YYZZ_JSMW = GetModConfigData("MOD_YYZZ_JSMW")
 local MOD_YBTX_BELLY = GetModConfigData("MOD_YBTX_BELLY")
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
 local MOD_XE_YMYD = GetModConfigData("MOD_XE_YMYD")
@@ -26,12 +24,6 @@ local function CalibrationSymBol()
     -- 移除特殊设置项的物品识别
     if not MOD_HYCS_YHFF then
         symbol_belly['lg_fufeng'] = nil
-    end
-    if not MOD_YYZZ_MJTS then
-        symbol_belly['to_angel'] = nil
-    end
-    if not MOD_YYZZ_JSMW then
-        symbol_belly['to_satan'] = nil
     end
     if not MOD_XE_YMYD then
         symbol_belly['myxl_dreambook'] = nil

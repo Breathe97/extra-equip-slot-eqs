@@ -35,8 +35,6 @@ return {
     lg_fufeng = "lg_fufeng",                   -- 海洋传说-雨花·扶风
     krm_uniform = "krm_uniform",               -- 狂三-校服
     to_school = "to_school",                   -- 鸢一折纸-校服
-    to_angel = "to_angel",                     -- 鸢一折纸-绝灭天使
-    to_satan = "to_satan",                     -- 鸢一折纸-救世魔王
     woolen_sweater = "woolen_sweater",         -- 山海秘藏-羊毛衫
     ccs_skirt1 = "ccs_skirt1",                 -- 魔法小樱-衣服
     armor_lifejacket = "armor_lifejacket",     -- 岛屿冒险-救生衣
