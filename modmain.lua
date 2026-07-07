@@ -251,7 +251,8 @@ local function InitPrefab()
 
         -- 为其他物品智能分配插槽
         AddPrefabPostInitAny(function(inst)
-            if not (GLOBAL.TheWorld.ismastersim and inst.components.equippable ~= nil) then
+            -- 无可装备组件（雕像/宝箱等放置物）跳过
+            if inst.components.equippable == nil then
                 return
             end
 
@@ -289,7 +290,7 @@ local function InitPrefab()
 
             -- ── 自动分配（基于组件/标签） ──
 
-            -- 1. 护符栏：有 amulet 标签 → 无论是否有护甲都去 NECK
+            -- 1. 护符栏：有 amulet 标签 → NECK
             if GLOBAL.EQUIPSLOTS.NECK and AUTO_SLOTS_NECK then
                 if inst:HasTag("amulet") then
                     inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK
@@ -297,21 +298,20 @@ local function InitPrefab()
                 end
             end
 
-            -- 2. 有 armor 组件 → 留在 BODY，不接受自动分配
-            if inst.components.armor ~= nil then
-                return
-            end
-
-            -- 3. 背包栏：无 armor + 有 container → BACK
+            -- 2. 背包栏：有 backpack/candybag 标签 → BACK（优先于 armor，支持装甲背包）
             if GLOBAL.EQUIPSLOTS.BACK and AUTO_SLOTS_BACK then
-                if inst.components.container ~= nil then
+                if inst:HasTag("backpack") or inst:HasTag("candybag") then
                     inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK
                     return
                 end
             end
 
-            -- 4. 服装栏：无 armor + 无 container + 有服装属性（防水/保暖/隔热/防雨等）→ BELLY
-            --    不符合服装属性的未知 body 物品则留在 BODY
+            -- 3. 有 armor 组件 → 留在 BODY
+            if inst.components.armor ~= nil then
+                return
+            end
+
+            -- 4. 有服装属性（防水/保暖/防雨）→ BELLY
             if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
                 if inst.components.waterproofer ~= nil
                     or inst.components.insulator ~= nil
@@ -387,7 +387,7 @@ local function RepairExtra()
             end
         end
 
-        if not IsServer and not GLOBAL.TheWorld.ismastersim then
+        if not IsServer then
             inst.GetOverflowContainer = GetOverflowContainer
         end
     end
