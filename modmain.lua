@@ -275,7 +275,6 @@ local function RepairExtra()
                 end
             end)
         end
-
         fixAmuletRebirth() -- 修复重生护符问题
 
         -- 建造护符在制作栏显示 -20% 折扣标记（安全回退 BODY→NECK，不修改函数签名）
@@ -301,7 +300,6 @@ local function RepairExtra()
                 inventory.GetEquippedItem = orig_GetEquippedItem -- 恢复原版
             end
         end
-
         fixSetRecipe() -- 修复护符栏配方查询
     end
 
