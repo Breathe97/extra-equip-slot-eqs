@@ -295,27 +295,29 @@ local function RepairExtra()
             local neck_build = nil      -- 护符贴图
             local back_build = nil      -- 背包贴图
             local back_skin_build = nil -- 背包皮肤贴图
-            local back_guid = nil       -- 背包guid
 
             --重写贴图渲染逻辑
+            -- 已变色光谱背包的贴图是额外的，只能一直挂在 swap_body 所以只能将 swap_body 让给背包
+            -- 还有一个 swap_body_tall 可以分配给其他身体栏物品 但是需要重设层级 swap_body > swap_body_tall
             local function RefreshEquipOverrides()
-                player.AnimState:ClearOverrideSymbol("swap_body_tall") -- 先卸载swap_body_tall
-
-                -- 如果背包原版贴图存在
-                if back_build then
-                    player.AnimState:OverrideSymbol("swap_body_tall", back_build, "swap_body") -- 设置原版物品贴图
-                end
-
-                -- 如果背包皮肤贴图存在
-                if back_build and back_skin_build and back_guid then
-                    player.AnimState:OverrideItemSkinSymbol("swap_body_tall", back_skin_build, "swap_body", back_guid) -- 设置皮肤物品贴图
-                end
-
-                local old_build = body_build or belly_build or neck_build -- 原来的身体栏贴图
-                -- 如果原本有身体栏贴图
-                if old_build then
-                    player.AnimState:OverrideSymbol("swap_body", old_build, "swap_body") -- 重新设置到swap_body
-                end
+                player.AnimState:ClearOverrideSymbol("swap_body_tall")                                      -- 先卸载swap_body_tall
+                -- 必须依次执行否则可能出现异常
+                player:DoTaskInTime(0, function()                                                           -- 第1帧
+                    if back_skin_build then                                                                 -- 如果背包皮肤贴图存在
+                        player.AnimState:OverrideSkinSymbol("swap_body_tall", back_skin_build, "swap_body") -- 设置皮肤物品贴图
+                    elseif back_build then                                                                  -- 如果背包原版贴图存在
+                        player.AnimState:OverrideSymbol("swap_body_tall", back_build, "swap_body")          -- 设置原版物品贴图
+                    end
+                    player:DoTaskInTime(0, function()                                                       -- 第2帧
+                        local old_build = body_build or belly_build or neck_build                           -- 新身体栏贴图 优先级：护甲 > 服装 > 护符
+                        if old_build then                                                                   -- 如果有新身体栏贴图
+                            player.AnimState:OverrideSymbol("swap_body", old_build, "swap_body")            -- 重新设置到swap_body
+                        end
+                        player:DoTaskInTime(0, function()                                                   -- 第3帧
+                            player.AnimState:SetSymbolExchange("swap_body", "swap_body_tall")               -- 把 swap_body_tall 放到 swap_body 下面（已变色光谱背包的贴图是额外的一直挂在swap_body 所以需要将 swap_body 层级重写设置回来）
+                        end)
+                    end)
+                end)
             end
 
             -- 装备
@@ -341,7 +343,6 @@ local function RepairExtra()
                 if data.eslot == GLOBAL.EQUIPSLOTS.BACK then
                     back_build = data.item.AnimState:GetBuild() -- 记录当前物品的贴图
                     back_skin_build = data.item:GetSkinBuild()  -- 记录当前物品的贴图
-                    back_guid = data.item.GUID                  -- 记录当前物品的GUID
                 end
 
                 RefreshEquipOverrides()
@@ -370,7 +371,6 @@ local function RepairExtra()
                 if data.eslot == GLOBAL.EQUIPSLOTS.BACK then
                     back_build = nil
                     back_skin_build = nil
-                    back_guid = nil
                 end
                 RefreshEquipOverrides()
             end)
@@ -378,24 +378,24 @@ local function RepairExtra()
 
         -- 监听从鬼魂复活事件，重新打开背包容器
         -- 大门/传送阵/肉块雕像复活时，引擎会关闭所有容器，护符复活没有这个问题
-        -- AddPrefabPostInitAny(function(inst)
-        --     if not GLOBAL.TheWorld.ismastersim then return end
-        --     -- 只对玩家角色生效（有 inventory 和 health 组件的就是玩家）
-        --     if inst.components.inventory ~= nil and inst.components.health ~= nil then
-        --         inst:ListenForEvent("respawnfromghost", function()
-        --             -- 延迟一帧确保复活流程完全结束
-        --             inst:DoTaskInTime(0, function()
-        --                 local backitem = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
-        --                 if backitem and backitem.components.container then
-        --                     -- 检查容器是否已关闭，如果关闭则重新打开
-        --                     if not backitem.components.container:IsOpen() then
-        --                         backitem.components.container:Open(inst)
-        --                     end
-        --                 end
-        --             end)
-        --         end)
-        --     end
-        -- end)
+        AddPrefabPostInitAny(function(inst)
+            if not GLOBAL.TheWorld.ismastersim then return end
+            -- 只对玩家角色生效（有 inventory 和 health 组件的就是玩家）
+            if inst.components.inventory ~= nil and inst.components.health ~= nil then
+                inst:ListenForEvent("respawnfromghost", function()
+                    -- 延迟一帧确保复活流程完全结束
+                    inst:DoTaskInTime(0, function()
+                        local backitem = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                        if backitem and backitem.components.container then
+                            -- 检查容器是否已关闭，如果关闭则重新打开
+                            if not backitem.components.container:IsOpen() then
+                                backitem.components.container:Open(inst)
+                            end
+                        end
+                    end)
+                end)
+            end
+        end)
     end
 
     -- 开启服装栏后的修复 参考于 2950481491
