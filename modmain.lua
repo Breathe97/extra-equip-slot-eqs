@@ -13,32 +13,32 @@ local MOD_YBTX_BELLY = GetModConfigData("MOD_YBTX_BELLY")
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
 local MOD_XE_YMYD = GetModConfigData("MOD_XE_YMYD")
 
-local symbol_belly = require("symbol_belly")             -- 定义服装栏物品
-local symbol_neck = require("symbol_neck")               -- 定义护符栏物品
-local symbol_back = require("symbol_back")               -- 定义背包栏物品
-local force_symbol_body = require("force_symbol_body")   -- 定义强制身体栏物品
-local force_symbol_belly = require("force_symbol_belly") -- 定义强制服装栏物品
+local SYMBOL_BELLY = require("symbol_belly")             -- 定义服装栏物品
+local SYMBOL_NECK = require("symbol_neck")               -- 定义护符栏物品
+local SYMBOL_BACK = require("symbol_back")               -- 定义背包栏物品
+local FORCE_SYMBOL_BODY = require("force_symbol_body")   -- 定义强制身体栏物品
+local FORCE_SYMBOL_BELLY = require("force_symbol_belly") -- 定义强制服装栏物品
 
 -- 校准 symbol表 根据设置中生成最终的物品表 后续再根据该表进行装备栏的分配
 local function CalibrationSymBol()
     -- 移除特殊设置项的物品识别
     if not MOD_HYCS_YHFF then
-        symbol_belly['lg_fufeng'] = nil
+        SYMBOL_BELLY['lg_fufeng'] = nil
     end
     if not MOD_XE_YMYD then
-        symbol_belly['myxl_dreambook'] = nil
+        SYMBOL_BELLY['myxl_dreambook'] = nil
     end
-    -- 如果不开启强制服装栏 调整的是 force_symbol_belly 表
+    -- 如果不开启强制服装栏 清空 trunkvest_summer 表
     if MOD_YBTX_BELLY == false then
-        force_symbol_belly['trunkvest_summer'] = nil
-        force_symbol_belly['trunkvest_winter'] = nil
-        force_symbol_belly['reflectivevest'] = nil
-        force_symbol_belly['hawaiianshirt'] = nil
-        force_symbol_belly['raincoat'] = nil
+        FORCE_SYMBOL_BELLY['trunkvest_summer'] = nil
+        FORCE_SYMBOL_BELLY['trunkvest_winter'] = nil
+        FORCE_SYMBOL_BELLY['reflectivevest'] = nil
+        FORCE_SYMBOL_BELLY['hawaiianshirt'] = nil
+        FORCE_SYMBOL_BELLY['raincoat'] = nil
     end
-    -- 这里就是取true 调整的是 force_symbol_body 表
+    -- 这里就是取true 调整的是 FORCE_SYMBOL_BODY 表
     if MOD_LJ_ZGF then
-        force_symbol_body['siving_suit_gold'] = nil
+        FORCE_SYMBOL_BODY['siving_suit_gold'] = nil
     end
 end
 CalibrationSymBol()
@@ -70,14 +70,8 @@ end
 local function InitSlot()
     -- 看不懂 大概意思就是说在原来的装备栏后面添加额外的衣服格子、背包格子、护符格子
     local function PostConstruct()
-        local Inv_Refresh_base = Inv.Refresh
-            or function()
-                return ""
-            end
-        local Inv_Rebuild_base = Inv.Rebuild
-            or function()
-                return ""
-            end
+        local Inv_Refresh_base = Inv.Refresh or nil
+        local Inv_Rebuild_base = Inv.Rebuild or nil
 
         function Inv:RebuildExtraSlots(self)
             -- See `scripts/widgets/inventorybar.lua:212-217`.
@@ -144,12 +138,16 @@ local function InitSlot()
         end
 
         function Inv:Rebuild()
-            Inv_Rebuild_base(self)
+            if Inv_Rebuild_base then
+                Inv_Rebuild_base(self)
+            end
             Inv:RebuildExtraSlots(self)
         end
 
         function Inv:Refresh()
-            Inv_Refresh_base(self)
+            if Inv_Refresh_base then
+                Inv_Refresh_base(self)
+            end
             Inv:RebuildExtraSlots(self)
         end
     end
@@ -160,164 +158,87 @@ InitSlot()
 -- 初始化物品栏
 local function InitPrefab()
     if IsServer then
-        -- 如果开启服装栏
-        if GLOBAL.EQUIPSLOTS.BELLY then
-            -- 初始化服装栏物品
-            local function InitBellyPrefab()
-                -- 给服装分配插槽
-                local function InitBelly(inst)
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.BODY
-                end
-                -- 标注服装栏物品
-                for k, v in pairs(symbol_belly) do
-                    AddPrefabPostInit(k, InitBelly)
-                end
-            end
-            InitBellyPrefab()
-        end
-
-        -- 如果开启护符栏
-        if GLOBAL.EQUIPSLOTS.NECK then
-            -- 初始化护符栏物品
-            local function InitNeckPrefab()
-                -- 给护符分配插槽
-                local function InitNeck(inst)
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BODY
-                end
-                -- 标注护符栏物品
-                for k, v in pairs(symbol_neck) do
-                    AddPrefabPostInit(k, InitNeck)
-                end
-            end
-            InitNeckPrefab()
-        end
-
-        -- 如果开启背包栏
-        if GLOBAL.EQUIPSLOTS.BACK then
-            -- 初始化背包栏物品
-            local function InitBackPrefab()
-                -- 装备背包 大概意思就是装备背包时重写人物形象
-                -- 背包视觉由 orig_onequip 通过 swap_body 处理（8方向完整支持颜色）
-                -- bagonequip 仅开容器，不额外设 swap_body_tall（该符号背面颜色渲染有缺陷）
-                local function bagonequip(inst, owner)
-                    if not DST then
-                        owner.components.inventory:SetOverflow(nil)
-                    end
-                    if inst.components.container then
-                        inst.components.container:Open(owner)
-                    end
-                end
-                -- 卸载背包 大概意思就是卸载背包时清除之前的形象
-                local function bagonunequip(inst, owner)
-                    if DST then
-                        local skin_build = inst:GetSkinBuild()
-                        if skin_build ~= nil then
-                            owner:PushEvent("unequipskinneditem", inst:GetSkinName())
-                        end
-                    end
-                    if not DST then
-                        owner.components.inventory:SetOverflow(inst)
-                    end
-                end
-                -- 给背包分配插槽
-                local function InitBack(inst)
-                    local orig_onequip = inst.components.equippable.onequipfn
-                    local orig_onunequip = inst.components.equippable.onunequipfn
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BODY
-                    -- 监听背包装备卸下事件（保留原版 onequip/onunequip 逻辑，如皮肤变色等）
-                    if DST then
-                        inst.components.equippable:SetOnEquip(function(_inst, owner)
-                            if orig_onequip then
-                                orig_onequip(_inst, owner) -- 先执行原版（处理视觉、颜色、皮肤）
-                            end
-                            bagonequip(_inst, owner)       -- 再开容器
-                        end)
-                        inst.components.equippable:SetOnUnequip(function(_inst, owner)
-                            bagonunequip(_inst, owner)       -- 先关容器
-                            if orig_onunequip then
-                                orig_onunequip(_inst, owner) -- 再执行原版（清理视觉符号）
-                            end
-                        end)
-                    end
-                end
-
-                -- 标注背包栏物品
-                for k, v in pairs(symbol_back) do
-                    AddPrefabPostInit(k, InitBack)
-                end
-            end
-            InitBackPrefab()
-        end
-
-        -- 为其他物品智能分配插槽
+        -- 为所有物品智能分配插槽
         AddPrefabPostInitAny(function(inst)
-            -- 无可装备组件（雕像/宝箱等放置物）跳过
-            if inst.components.equippable == nil then
+            local isBodyPrefab = inst.components.equippable ~= nil and inst.components.equippable.equipslot == 'body' -- 是否为身体栏物品
+
+            -- 不是身体栏物品跳过
+            if not isBodyPrefab then
                 return
             end
 
             local prefab = inst.prefab -- 物品名称
 
-            -- 一些模组物品会被误以为是额外的装备 但是它实际上应该在服装栏
-            local is_force_symbol_belly = force_symbol_belly[prefab] -- 是否属于强制服装物品
-            if is_force_symbol_belly then
-                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
-                    or GLOBAL.EQUIPSLOTS
-                    .BODY -- 优先分配到服装栏 如果没有开启服装栏就分配到身体栏
-                return
-            end
-
             -- 一些模组物品会被误以为是额外的装备 但是它实际上应该在身体栏
-            local is_force_symbol_body = force_symbol_body[prefab] -- 是否属于强制身体物品
+            local is_force_symbol_body = FORCE_SYMBOL_BODY[prefab] -- 是否属于强制身体栏物品
             if is_force_symbol_body then
-                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BODY
                 return
             end
 
-            -- 如果已经进行了适配的物品也不进行智能适配
-            local is_adaptation = symbol_belly[prefab] or symbol_neck[prefab]
-                or symbol_back[prefab] or force_symbol_body[prefab]
-                or force_symbol_belly[prefab]
-            if is_adaptation then
-                return
-            end
+            -- 检查是否为服装栏
+            local function IsBellySlot()
+                local is_symbol_belly = SYMBOL_BELLY[prefab]             -- 是否属于服装栏物品
+                local is_force_symbol_belly = FORCE_SYMBOL_BELLY[prefab] -- 是否属于强制服装栏物品
+                local matched = false                                    -- 自动识别 默认为false
 
-            -- 只要不属于身体的物品就不往下走
-            local equipslot = inst.components.equippable.equipslot or nil
-            if equipslot == nil or equipslot ~= "body" then
-                return
-            end
+                -- 当开启自动识别
+                if AUTO_SLOTS_BELLY then
+                    matched = inst.components.waterproofer ~= nil or inst.components.insulator ~= nil or inst.components.rainimmunity ~= nil -- 是否有服装属性（防水/保暖/防雨）
+                end
 
-            -- ── 自动分配（基于组件/标签） ──
-
-            -- 1. 护符栏：有 amulet 标签 → NECK
-            if GLOBAL.EQUIPSLOTS.NECK and AUTO_SLOTS_NECK then
-                if inst:HasTag("amulet") then
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK
-                    return
+                if is_symbol_belly or is_force_symbol_belly or matched then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.BODY -- 优先分配到服装栏 如果没有开启服装栏就分配到身体栏
                 end
             end
 
-            -- 2. 背包栏：有 backpack/candybag 标签 → BACK（优先于 armor，支持装甲背包）
-            if GLOBAL.EQUIPSLOTS.BACK and AUTO_SLOTS_BACK then
-                if inst:HasTag("backpack") or inst:HasTag("candybag") then
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK
-                    return
+            -- 检查是否为护符栏
+            local function IsNeckSlot()
+                local is_symbol_neck = SYMBOL_NECK[prefab] -- 是否属于护符栏物品
+                local matched = false                      -- 自动识别 默认为false
+
+                -- 当开启自动识别
+                if AUTO_SLOTS_NECK then
+                    matched = inst:HasTag("amulet") -- 是否有护符标签
+                end
+
+                if is_symbol_neck or matched then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BODY -- 优先分配到护符栏 如果没有开启护符栏就分配到身体栏
                 end
             end
 
-            -- 3. 有 armor 组件 → 留在 BODY
-            if inst.components.armor ~= nil then
-                return
+            -- 检查是否为背包栏
+            local function IsBackSlot()
+                local is_symbol_back = SYMBOL_BACK[prefab] -- 是否属于背包栏物品
+                local matched = false                      -- 自动识别 默认为false
+
+                -- 当开启自动识别
+                if AUTO_SLOTS_BACK then
+                    matched = inst:HasTag("backpack") or inst:HasTag("candybag") -- 是否有背包、糖果袋标签
+                end
+
+                -- 重写物品装备卸载逻辑
+                local function aaa()
+                end
+
+                if is_symbol_back or matched then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BODY -- 优先分配到背包栏 如果没有开启护符栏就分配到身体栏
+                    aaa()
+                end
             end
 
-            -- 4. 有服装属性（防水/保暖/防雨）→ BELLY
-            if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
-                if inst.components.waterproofer ~= nil
-                    or inst.components.insulator ~= nil
-                    or inst.components.rainimmunity ~= nil then
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
-                end
+            -- 如果开启服装栏
+            if GLOBAL.EQUIPSLOTS.BELLY then
+                IsBellySlot() -- 检查是否为服装栏
+            end
+
+            -- 如果开启护符栏
+            if GLOBAL.EQUIPSLOTS.NECK then
+                IsNeckSlot() -- 检查是否为护符栏
+            end
+
+            -- 如果开启背包栏
+            if GLOBAL.EQUIPSLOTS.BACK then
+                IsBackSlot() -- 检查是否为背包栏
             end
         end)
     end
@@ -634,7 +555,7 @@ local function RepairExtra()
         end)
     end
 end
-RepairExtra()
+-- RepairExtra()
 
 -- 鼠标显示物品代码
 local function HoverItemCode()
