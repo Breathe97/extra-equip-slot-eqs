@@ -308,36 +308,41 @@ local function RepairExtra()
     -- 开启背包栏后的修复
     if GLOBAL.EQUIPSLOTS.BACK then
         local function fixVisual()
+            -- 重写背包栏物品装卸逻辑
             AddPrefabPostInitAny(function(inst)
                 if not GLOBAL.TheWorld.ismastersim then return end                                -- 仅在服务端执行（同步到客户端）
                 if not inst.components.equippable then return end                                 -- 没有 equippable 组件的物品跳过
                 if inst.components.equippable.equipslot ~= GLOBAL.EQUIPSLOTS.BACK then return end -- 非 BACK 槽物品跳过
 
+                -- 装备
                 inst.components.equippable:SetOnEquip(function(item, owner)
-                    -- 原版物品
-                    local build = item.AnimState:GetBuild()
-                    if build then
-                        owner.AnimState:OverrideSymbol("swap_body_tall", build, "swap_body")
-                    end
-
-                    -- 皮肤物品
-                    local skin_build = item:GetSkinBuild()
+                    local skin_build = item:GetSkinBuild()                                                                  -- 皮肤物品符号
                     if skin_build and skin_build ~= "" then
-                        -- 有皮肤：用皮肤系统写到 swap_body_tall，不碰 swap_body
-                        owner.AnimState:OverrideItemSkinSymbol("swap_body_tall", skin_build, "swap_body", item.GUID, build)
-                        owner.AnimState:OverrideSkinSymbol("swap_body_tall", skin_build, "swap_body")
+                        owner.AnimState:OverrideItemSkinSymbol("swap_body_tall", skin_build, "swap_body", item.GUID, build) -- 设置皮肤物品贴图
                     end
 
-                    -- 打开容器
+
+                    local build = item.AnimState:GetBuild()                                  -- 原版物品符号
+                    if build then
+                        owner.AnimState:OverrideSymbol("swap_body_tall", build, "swap_body") -- 设置原版物品贴图
+                    end
+
+
+
                     if item.components.container then
-                        item.components.container:Open(owner)
+                        item.components.container:Open(owner) -- 打开容器
                     end
                 end)
 
+                -- 卸载
                 inst.components.equippable:SetOnUnequip(function(item, owner)
-                    owner.AnimState:ClearOverrideSymbol("swap_body_tall")
+                    owner.AnimState:ClearOverrideSymbol("swap_body_tall") -- 清理贴图
+                    -- if item.backpack_skin_fns and item.backpack_skin_fns.onunequip then
+                    --     item.backpack_skin_fns.onunequip(item, owner)
+                    -- end
+
                     if item.components.container then
-                        item.components.container:Close(owner)
+                        item.components.container:Close(owner) -- 关闭容器
                     end
                 end)
             end)
