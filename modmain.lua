@@ -300,21 +300,21 @@ local function RepairExtra()
             -- 已变色光谱背包的贴图是额外的，只能一直挂在 swap_body 所以只能将 swap_body 让给背包
             -- 还有一个 swap_body_tall 可以分配给其他身体栏物品 但是需要重设层级 swap_body > swap_body_tall
             local function RefreshEquipOverrides()
-                player.AnimState:ClearOverrideSymbol("swap_body_tall")                                      -- 先卸载swap_body_tall
+                player.AnimState:ClearOverrideSymbol("swap_body_tall")                                     -- 先卸载swap_body_tall
                 -- 必须依次执行否则可能出现异常
-                player:DoTaskInTime(0, function()                                                           -- 第1帧
-                    if back_skin_build then                                                                 -- 如果背包皮肤贴图存在
-                        player.AnimState:OverrideSkinSymbol("swap_body_tall", back_skin_build, "swap_body") -- 设置皮肤物品贴图
-                    elseif back_build then                                                                  -- 如果背包原版贴图存在
-                        player.AnimState:OverrideSymbol("swap_body_tall", back_build, "swap_body")          -- 设置原版物品贴图
+                player:DoTaskInTime(0, function()                                                          -- 第1帧
+                    local old_build = body_build or belly_build or neck_build                              -- 新身体栏贴图 优先级：护甲 > 服装 > 护符
+                    if old_build then                                                                      -- 如果有新身体栏贴图
+                        player.AnimState:OverrideSymbol("swap_body_tall", old_build, "swap_body")          -- 重新设置到swap_body
                     end
-                    player:DoTaskInTime(0, function()                                                       -- 第2帧
-                        local old_build = body_build or belly_build or neck_build                           -- 新身体栏贴图 优先级：护甲 > 服装 > 护符
-                        if old_build then                                                                   -- 如果有新身体栏贴图
-                            player.AnimState:OverrideSymbol("swap_body", old_build, "swap_body")            -- 重新设置到swap_body
+                    player:DoTaskInTime(0, function()                                                      -- 第2帧
+                        if back_skin_build then                                                            -- 如果背包皮肤贴图存在
+                            player.AnimState:OverrideSkinSymbol("swap_body", back_skin_build, "swap_body") -- 设置皮肤物品贴图
+                        elseif back_build then                                                             -- 如果背包原版贴图存在
+                            player.AnimState:OverrideSymbol("swap_body", back_build, "swap_body")          -- 设置原版物品贴图
                         end
-                        player:DoTaskInTime(0, function()                                                   -- 第3帧
-                            player.AnimState:SetSymbolExchange("swap_body", "swap_body_tall")               -- 把 swap_body_tall 放到 swap_body 下面（已变色光谱背包的贴图是额外的一直挂在swap_body 所以需要将 swap_body 层级重写设置回来）
+                        player:DoTaskInTime(0, function()                                                  -- 第3帧
+                            player.AnimState:SetSymbolExchange("swap_body_tall", "swap_body")              -- 设置贴图层级 1 < 2 < 3 （swap_body_tall 在 swap_body 下面 ）
                         end)
                     end)
                 end)
@@ -399,118 +399,118 @@ local function RepairExtra()
     end
 
     -- 开启服装栏后的修复 参考于 2950481491
-    -- if GLOBAL.EQUIPSLOTS.BELLY then
-    --     -- 当你给“寄居蟹隐士”一件外套时，她会尝试使用旧的装备槽。让我们也用新的.
-    --     -- See `scripts/prefabs/hermitcrab.lua`.
-    --     AddPrefabPostInit("hermitcrab", function(inst)
-    --         if not GLOBAL.TheWorld.ismastersim then
-    --             return
-    --         end
+    if GLOBAL.EQUIPSLOTS.BELLY then
+        -- 当你给“寄居蟹隐士”一件外套时，她会尝试使用旧的装备槽。让我们也用新的.
+        -- See `scripts/prefabs/hermitcrab.lua`.
+        AddPrefabPostInit("hermitcrab", function(inst)
+            if not GLOBAL.TheWorld.ismastersim then
+                return
+            end
 
-    --         local function iscoat(item)
-    --             return item.components.insulator and item.components.insulator:GetInsulation()
-    --                 >= GLOBAL.TUNING.INSULATION_SMALL
-    --                 and item.components.insulator:GetType() == GLOBAL.SEASONS.WINTER and item.components.equippable
-    --                 and item.components.equippable.equipslot == EQUIPSLOTS_MAP.BELLY
-    --         end
+            local function iscoat(item)
+                return item.components.insulator and item.components.insulator:GetInsulation()
+                    >= GLOBAL.TUNING.INSULATION_SMALL
+                    and item.components.insulator:GetType() == GLOBAL.SEASONS.WINTER and item.components.equippable
+                    and item.components.equippable.equipslot == EQUIPSLOTS_MAP.BELLY
+            end
 
-    --         local function getcoat(inst1)
-    --             local equipped = inst1.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
-    --             return inst1.components.inventory:FindItem(function(testitem) return iscoat(testitem) end)
-    --                 or (equipped and iscoat(equipped) and equipped)
-    --         end
+            local function getcoat(inst1)
+                local equipped = inst1.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
+                return inst1.components.inventory:FindItem(function(testitem) return iscoat(testitem) end)
+                    or (equipped and iscoat(equipped) and equipped)
+            end
 
-    --         -- 添加一个额外的项目监听器.
-    --         -- See `scripts/prefabs/hermitcrab.lua:1011`.
-    --         inst:ListenForEvent("itemget", function(_, data)
-    --             if iscoat(data.item) and GLOBAL.TheWorld.state.issnowing then
-    --                 local TASKS_GIVE_PUFFY_VEST = 11 -- Copy from `prefabs/hermitcrab.lua:57`.
-    --                 inst.components.inventory:Equip(data.item)
-    --                 inst.components.friendlevels:CompleteTask(TASKS_GIVE_PUFFY_VEST)
-    --             end
-    --         end)
+            -- 添加一个额外的项目监听器.
+            -- See `scripts/prefabs/hermitcrab.lua:1011`.
+            inst:ListenForEvent("itemget", function(_, data)
+                if iscoat(data.item) and GLOBAL.TheWorld.state.issnowing then
+                    local TASKS_GIVE_PUFFY_VEST = 11 -- Copy from `prefabs/hermitcrab.lua:57`.
+                    inst.components.inventory:Equip(data.item)
+                    inst.components.friendlevels:CompleteTask(TASKS_GIVE_PUFFY_VEST)
+                end
+            end)
 
-    --         -- 覆盖 `ShouldAcceptItem`.
-    --         -- See `scripts/prefabs/hermitcrab.lua:122-123,127`.
-    --         local ShouldAcceptItem_Base = inst.components.trader.test
-    --         inst.components.trader:SetAcceptTest(function(inst1, item)
-    --             return (iscoat(item) and GLOBAL.TheWorld.state.issnowing and not getcoat(inst1))
-    --                 or ShouldAcceptItem_Base(inst1, item)
-    --         end)
+            -- 覆盖 `ShouldAcceptItem`.
+            -- See `scripts/prefabs/hermitcrab.lua:122-123,127`.
+            local ShouldAcceptItem_Base = inst.components.trader.test
+            inst.components.trader:SetAcceptTest(function(inst1, item)
+                return (iscoat(item) and GLOBAL.TheWorld.state.issnowing and not getcoat(inst1))
+                    or ShouldAcceptItem_Base(inst1, item)
+            end)
 
-    --         -- 覆盖 `OnRefuseItem`.
-    --         -- See `scripts/prefabs/hermitcrab.lua:144-146`.
-    --         local OnRefuseItem_Base = inst.components.trader.onrefuse
-    --         inst.components.trader.onrefuse = function(inst1, giver, item)
-    --             if iscoat(item) then
-    --                 if getcoat(inst1) then
-    --                     inst1.components.npc_talker:Say(GLOBAL.STRINGS
-    --                         .HERMITCRAB_REFUSE_COAT_HASONE
-    --                         [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT_HASONE)])
-    --                 elseif not GLOBAL.TheWorld.state.issnowing then
-    --                     inst1.components.npc_talker:Say(GLOBAL.STRINGS
-    --                         .HERMITCRAB_REFUSE_COAT
-    --                         [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT)])
-    --                 end
-    --             end
-    --             OnRefuseItem_Base(inst, giver, item)
-    --         end
+            -- 覆盖 `OnRefuseItem`.
+            -- See `scripts/prefabs/hermitcrab.lua:144-146`.
+            local OnRefuseItem_Base = inst.components.trader.onrefuse
+            inst.components.trader.onrefuse = function(inst1, giver, item)
+                if iscoat(item) then
+                    if getcoat(inst1) then
+                        inst1.components.npc_talker:Say(GLOBAL.STRINGS
+                            .HERMITCRAB_REFUSE_COAT_HASONE
+                            [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT_HASONE)])
+                    elseif not GLOBAL.TheWorld.state.issnowing then
+                        inst1.components.npc_talker:Say(GLOBAL.STRINGS
+                            .HERMITCRAB_REFUSE_COAT
+                            [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT)])
+                    end
+                end
+                OnRefuseItem_Base(inst, giver, item)
+            end
 
-    --         -- 覆盖 `iscoat`.
-    --         -- See `scripts/prefabs/hermitcrab.lua:1363`.
-    --         inst.iscoat = iscoat
-    --         inst.getcoat = getcoat
-    --     end)
+            -- 覆盖 `iscoat`.
+            -- See `scripts/prefabs/hermitcrab.lua:1363`.
+            inst.iscoat = iscoat
+            inst.getcoat = getcoat
+        end)
 
-    --     -- “寄居蟹隐士”有一个大脑，可以让她在旧装备槽中装备/取消装备外套。让我们也用新的.
-    --     -- See `scripts/brains/hermitcrabbrain.lua`.
-    --     AddBrainPostInit("hermitcrabbrain", function(brain)
-    --         local function using_coat(inst)
-    --             local equipped = inst.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
-    --             return equipped and inst.iscoat(equipped) or nil
-    --         end
+        -- “寄居蟹隐士”有一个大脑，可以让她在旧装备槽中装备/取消装备外套。让我们也用新的.
+        -- See `scripts/brains/hermitcrabbrain.lua`.
+        AddBrainPostInit("hermitcrabbrain", function(brain)
+            local function using_coat(inst)
+                local equipped = inst.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
+                return equipped and inst.iscoat(equipped) or nil
+            end
 
-    --         local function has_coat(inst)
-    --             return inst.components.inventory:FindItem(function(testitem) return inst.iscoat(testitem) end)
-    --         end
+            local function has_coat(inst)
+                return inst.components.inventory:FindItem(function(testitem) return inst.iscoat(testitem) end)
+            end
 
-    --         local function EquipCoat(inst)
-    --             local coat = inst.getcoat(inst)
-    --             if coat then
-    --                 inst.components.inventory:Equip(coat)
-    --             end
-    --         end
+            local function EquipCoat(inst)
+                local coat = inst.getcoat(inst)
+                if coat then
+                    inst.components.inventory:Equip(coat)
+                end
+            end
 
-    --         local function UnequipCoat(inst)
-    --             local item = inst.components.inventory:Unequip(EQUIPSLOTS_MAP.BELLY)
-    --             inst.components.inventory:GiveItem(item)
-    --         end
+            local function UnequipCoat(inst)
+                local item = inst.components.inventory:Unequip(EQUIPSLOTS_MAP.BELLY)
+                inst.components.inventory:GiveItem(item)
+            end
 
-    --         local new_children = {}
-    --         for _, child in ipairs(brain.bt.root.children) do
-    --             if child.name == "Sequence" and child.children[1].name == "coat" then
-    --                 table.insert(
-    --                     new_children,
-    --                     GLOBAL.IfNode(function()
-    --                         return not brain.inst.sg:HasStateTag("busy") and GLOBAL.TheWorld.state.issnowing
-    --                             and has_coat(brain.inst) and not using_coat(brain.inst)
-    --                     end, "coat", GLOBAL.DoAction(brain.inst, EquipCoat, "coat", true))
-    --                 )
-    --             elseif child.name == "Sequence" and child.children[1].name == "stop coat" then
-    --                 table.insert(
-    --                     new_children,
-    --                     GLOBAL.IfNode(function()
-    --                         return not brain.inst.sg:HasStateTag("busy") and not GLOBAL.TheWorld.state.issnowing
-    --                             and using_coat(brain.inst)
-    --                     end, "stop coat", GLOBAL.DoAction(brain.inst, UnequipCoat, "stop coat", true))
-    --                 )
-    --             else
-    --                 table.insert(new_children, child)
-    --             end
-    --         end
-    --         brain.bt = GLOBAL.BT(brain.inst, GLOBAL.PriorityNode(new_children, 0.5))
-    --     end)
-    -- end
+            local new_children = {}
+            for _, child in ipairs(brain.bt.root.children) do
+                if child.name == "Sequence" and child.children[1].name == "coat" then
+                    table.insert(
+                        new_children,
+                        GLOBAL.IfNode(function()
+                            return not brain.inst.sg:HasStateTag("busy") and GLOBAL.TheWorld.state.issnowing
+                                and has_coat(brain.inst) and not using_coat(brain.inst)
+                        end, "coat", GLOBAL.DoAction(brain.inst, EquipCoat, "coat", true))
+                    )
+                elseif child.name == "Sequence" and child.children[1].name == "stop coat" then
+                    table.insert(
+                        new_children,
+                        GLOBAL.IfNode(function()
+                            return not brain.inst.sg:HasStateTag("busy") and not GLOBAL.TheWorld.state.issnowing
+                                and using_coat(brain.inst)
+                        end, "stop coat", GLOBAL.DoAction(brain.inst, UnequipCoat, "stop coat", true))
+                    )
+                else
+                    table.insert(new_children, child)
+                end
+            end
+            brain.bt = GLOBAL.BT(brain.inst, GLOBAL.PriorityNode(new_children, 0.5))
+        end)
+    end
 
 
     -- 容器堆叠修复：为新增装备槽（BELLY/NECK/BACK）提供正确的物品堆叠容器识别
