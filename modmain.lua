@@ -307,6 +307,7 @@ local function RepairExtra()
 
     -- 开启背包栏后的修复
     if GLOBAL.EQUIPSLOTS.BACK then
+        -- 修复背包贴图
         local function fixVisual()
             AddPlayerPostInit(function(player)
                 local body_build = nil      -- 护甲贴图
@@ -396,7 +397,7 @@ local function RepairExtra()
             end)
         end
 
-        fixVisual() -- 背包视觉
+        fixVisual() -- 修复背包贴图
 
 
         -- 对人物物品变化添加额外的事件
