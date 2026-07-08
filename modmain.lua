@@ -546,13 +546,6 @@ local function RepairExtra()
                 return
             end
 
-            -- 原版只检查 body 和 head，这里新增了 back、belly 和 neck
-            local backitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BACK)
-            local bodyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BODY)
-            local headitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.HEAD)
-            local bellyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BELLY)
-            local neckitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.NECK)
-
             -- 获取指定装备槽位上已打开的容器，如果该槽位没有物品或无容器/未打开则返回 nil
             local function getOpenContainer(eslot)
                 local item = inst.GetEquippedItem(inst, eslot)
