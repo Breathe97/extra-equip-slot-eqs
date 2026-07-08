@@ -308,36 +308,90 @@ local function RepairExtra()
     -- 开启背包栏后的修复
     if GLOBAL.EQUIPSLOTS.BACK then
         local function fixVisual()
-            -- 重写背包栏物品装卸逻辑
-            AddPrefabPostInitAny(function(inst)
-                if not GLOBAL.TheWorld.ismastersim then return end                                -- 仅在服务端执行（同步到客户端）
-                if not inst.components.equippable then return end                                 -- 没有 equippable 组件的物品跳过
-                if inst.components.equippable.equipslot ~= GLOBAL.EQUIPSLOTS.BACK then return end -- 非 BACK 槽物品跳过
+            AddPlayerPostInit(function(player)
+                local body_build = nil      -- 护甲贴图
+                local belly_build = nil     -- 服装贴图
+                local neck_build = nil      -- 护符贴图
+                local back_build = nil      -- 背包贴图
+                local back_skin_build = nil -- 背包皮肤贴图
+                local back_guid = nil       -- 背包guid
+
+
+                local function aaa()
+                    player.AnimState:ClearOverrideSymbol("swap_body_tall") -- 先卸载swap_body_tall
+
+                    -- 如果背包原版贴图存在
+                    if back_build then
+                        player.AnimState:OverrideSymbol("swap_body_tall", back_build, "swap_body") -- 设置原版物品贴图
+                    end
+
+                    -- 如果背包皮肤贴图存在
+                    if back_build and back_skin_build and back_guid then
+                        player.AnimState:OverrideItemSkinSymbol("swap_body_tall", back_skin_build, "swap_body", back_guid) -- 设置皮肤物品贴图
+                    end
+
+                    local old_build = body_build or belly_build or neck_build -- 原来的身体栏贴图
+                    -- 如果原本有身体栏贴图
+                    if old_build then
+                        player.AnimState:OverrideSymbol("swap_body", old_build, "swap_body") -- 重新设置到swap_body
+                    end
+                end
 
                 -- 装备
-                inst.components.equippable:SetOnEquip(function(item, owner)
-                    local skin_build = item:GetSkinBuild()                                                                  -- 皮肤物品符号
-                    if skin_build and skin_build ~= "" then
-                        owner.AnimState:OverrideItemSkinSymbol("swap_body_tall", skin_build, "swap_body", item.GUID, build) -- 设置皮肤物品贴图
+                player:ListenForEvent("equip", function(_, data)
+                    if not data or not data.item then return end
+
+                    -- 护甲栏
+                    if data.eslot == GLOBAL.EQUIPSLOTS.BODY then
+                        body_build = data.item.AnimState:GetBuild() -- 记录当前物品的贴图
                     end
 
-                    local build = item.AnimState:GetBuild()                                  -- 原版物品符号
-                    if build then
-                        owner.AnimState:OverrideSymbol("swap_body_tall", build, "swap_body") -- 设置原版物品贴图
+                    -- 服装栏
+                    if data.eslot == GLOBAL.EQUIPSLOTS.BELLY then
+                        belly_build = data.item.AnimState:GetBuild() -- 记录当前物品的贴图
                     end
 
-                    if item.components.container then
-                        item.components.container:Open(owner) -- 打开容器
+                    -- 护符栏
+                    if data.eslot == GLOBAL.EQUIPSLOTS.NECK then
+                        neck_build = data.item.AnimState:GetBuild() -- 记录当前物品的贴图
                     end
+
+                    -- 背包栏
+                    if data.eslot == GLOBAL.EQUIPSLOTS.BACK then
+                        back_build = data.item.AnimState:GetBuild() -- 记录当前物品的贴图
+                        back_skin_build = data.item:GetSkinBuild()  -- 记录当前物品的贴图
+                        back_guid = data.item.GUID                  -- 记录当前物品的GUID
+                    end
+
+                    aaa()
                 end)
 
                 -- 卸载
-                inst.components.equippable:SetOnUnequip(function(item, owner)
-                    owner.AnimState:ClearOverrideSymbol("swap_body_tall") -- 清理贴图
+                player:ListenForEvent("unequip", function(_, data)
+                    if not data then return end
 
-                    if item.components.container then
-                        item.components.container:Close(owner) -- 关闭容器
+                    -- 护甲栏
+                    if data.eslot == GLOBAL.EQUIPSLOTS.BODY then
+                        body_build = nil
                     end
+
+                    -- 服装栏
+                    if data.eslot == GLOBAL.EQUIPSLOTS.BELLY then
+                        belly_build = nil
+                    end
+
+                    -- 护符栏
+                    if data.eslot == GLOBAL.EQUIPSLOTS.NECK then
+                        neck_build = nil
+                    end
+
+                    -- 背包栏
+                    if data.eslot == GLOBAL.EQUIPSLOTS.BACK then
+                        back_build = nil
+                        back_skin_build = nil
+                        back_guid = nil
+                    end
+                    aaa()
                 end)
             end)
         end
@@ -675,18 +729,6 @@ local function HoverItemCode()
                 local build = GetBuild(target)
                 if build ~= nil then
                     str = str .. "\n" .. build
-                end
-                -- ★ 显示当前物品被分配到的符号
-                if ThePlayer and ThePlayer.replica and ThePlayer.replica.inventory then
-                    local inv = ThePlayer.replica.inventory
-                    for slot_name, slot_id in pairs(GLOBAL.EQUIPSLOTS) do
-                        if inv:GetEquippedItem(slot_id) == target then
-                            local symbol = slot_name == "BACK" and "backpack" or "swap_body"
-                            str = str .. "\n" .. "槽位: " .. tostring(slot_name)
-                            str = str .. "\n" .. "符号: " .. symbol
-                            break
-                        end
-                    end
                 end
             end
             return old_SetString(text, str)
