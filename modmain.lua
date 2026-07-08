@@ -308,7 +308,7 @@ local function RepairExtra()
                         player.AnimState:OverrideSymbol("swap_body_tall", old_build, "swap_body")          -- 重新设置到swap_body
                     end
                     player:DoTaskInTime(0, function()                                                      -- 第2帧
-                        if back_skin_build then                                                            -- 如果背包皮肤贴图存在
+                        if back_skin_build and back_skin_build ~= '' then                                  -- 如果背包皮肤贴图存在
                             player.AnimState:OverrideSkinSymbol("swap_body", back_skin_build, "swap_body") -- 设置皮肤物品贴图
                         elseif back_build then                                                             -- 如果背包原版贴图存在
                             player.AnimState:OverrideSymbol("swap_body", back_build, "swap_body")          -- 设置原版物品贴图
