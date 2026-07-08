@@ -417,7 +417,7 @@ local function RepairExtra()
         end)
     end
 
-    -- 参考于 2950481491
+    -- 开启服装栏后的修复 参考于 2950481491
     if GLOBAL.EQUIPSLOTS.BELLY then
         -- 当你给“寄居蟹隐士”一件外套时，她会尝试使用旧的装备槽。让我们也用新的.
         -- See `scripts/prefabs/hermitcrab.lua`.
