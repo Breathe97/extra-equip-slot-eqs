@@ -605,6 +605,35 @@ local function RepairExtra()
     if GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BELLY then
         AddPrefabPostInit("inventory_classified", PrefabPostInit)
     end
+
+    -- 服务器端 GetOverflowContainer 修复：为新增装备槽提供正确的物品堆叠容器识别
+    -- 问题背景同客户端：原版 inventory:GetOverflowContainer() 只检查 BODY 槽
+    -- 导致玩家捡物品时不会自动与背包/服装容器中的同类物品堆叠
+    local function ServerInventoryPostInit(comp)
+        local _GetOverflowContainer = comp.GetOverflowContainer
+        function comp:GetOverflowContainer()
+            -- 先尝试原版逻辑（仅 BODY 槽）
+            local container = _GetOverflowContainer(self)
+            if container then
+                return container
+            end
+
+            -- 检查新增装备槽的打开容器
+            for _, eslot in ipairs({ GLOBAL.EQUIPSLOTS.BACK, GLOBAL.EQUIPSLOTS.BELLY, GLOBAL.EQUIPSLOTS.NECK }) do
+                if eslot then
+                    local item = self:GetEquippedItem(eslot)
+                    if item and item.components.container and item.components.container:IsOpen() then
+                        return item.components.container
+                    end
+                end
+            end
+        end
+    end
+
+    -- 服务器端：只要开启了任意新增槽位，就应用这个修复
+    if IsServer and (GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BELLY) then
+        AddComponentPostInit("inventory", ServerInventoryPostInit)
+    end
 end
 RepairExtra()
 
