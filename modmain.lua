@@ -321,13 +321,10 @@ local function RepairExtra()
                         owner.AnimState:OverrideItemSkinSymbol("swap_body_tall", skin_build, "swap_body", item.GUID, build) -- 设置皮肤物品贴图
                     end
 
-
                     local build = item.AnimState:GetBuild()                                  -- 原版物品符号
                     if build then
                         owner.AnimState:OverrideSymbol("swap_body_tall", build, "swap_body") -- 设置原版物品贴图
                     end
-
-
 
                     if item.components.container then
                         item.components.container:Open(owner) -- 打开容器
@@ -337,9 +334,6 @@ local function RepairExtra()
                 -- 卸载
                 inst.components.equippable:SetOnUnequip(function(item, owner)
                     owner.AnimState:ClearOverrideSymbol("swap_body_tall") -- 清理贴图
-                    -- if item.backpack_skin_fns and item.backpack_skin_fns.onunequip then
-                    --     item.backpack_skin_fns.onunequip(item, owner)
-                    -- end
 
                     if item.components.container then
                         item.components.container:Close(owner) -- 关闭容器
