@@ -1,6 +1,6 @@
 -- 定义护符栏物品
 return {
-    -- 护符栏 原版物品
+    -- 原版物品
     amulet = "amulet",             -- 红色护符
     blueamulet = "blueamulet",     -- 蓝色护符
     purpleamulet = "purpleamulet", -- 紫色护符
@@ -8,7 +8,7 @@ return {
     yellowamulet = "yellowamulet", -- 黄色护符
     greenamulet = "greenamulet",   -- 绿色护符
 
-    -- 护符栏 模组物品
+    -- 模组物品
     brooch1 = "brooch1",                                 -- 伊蕾娜-胸针
     brooch2 = "brooch2",                                 -- 伊蕾娜-胸针
     brooch3 = "brooch3",                                 -- 伊蕾娜-胸针
@@ -27,8 +27,6 @@ return {
     wharang_amulet = "wharang_amulet",                   -- 千年狐
     fhl_hsf = "fhl_hsf",                                 -- 风幻龙-护身符
     ndnr_opalpreciousamulet = "ndnr_opalpreciousamulet", -- 富贵
-
-    -- Limbus Company 护符
     fixer_medal_crimson = "fixer_medal_crimson",     -- 边狱巴士-收尾人勋章·猩红凝视
     fixer_medal_indigo = "fixer_medal_indigo",       -- 边狱巴士-收尾人勋章·靛蓝老人
     fixer_medal_siegfried = "fixer_medal_siegfried", -- 边狱巴士-收尾人勋章·齐格飞

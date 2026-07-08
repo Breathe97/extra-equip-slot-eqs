@@ -1,6 +1,6 @@
 -- 定义服装栏物品
 return {
-    -- 服装栏 原版物品
+    -- 原版物品
     raincoat = "raincoat",                 -- 雨衣
     onemanband = "onemanband",             -- 独奏乐器
     sweatervest = "sweatervest",           -- 犬牙背心
@@ -23,7 +23,7 @@ return {
     -- costume_mirror_body = "costume_mirror_body", -- 镜子服
     -- costume_blacksmith_body = "costume_blacksmith_body", -- 小丑服
 
-    -- 服装栏 模组物品
+    -- 模组物品
     down_filled_coat = "down_filled_coat",     -- 能力勋章
     cassock = "cassock",                       -- 神话书说-袈裟
     kam_lan_cassock = "kam_lan_cassock",       -- 神话书说-锦斓袈裟
@@ -52,8 +52,6 @@ return {
     fsm_yunmie_outfits = "fsm_yunmie_outfits", -- 山海秘藏-云咩套
     sdf_victorian_suit = "sdf_victorian_suit", -- Medievil Reanimated-衣服
     zhifu = "zhifu",                           -- 战舰少女补给包-秋冬制服
-
-    -- Limbus Company 服装（无防御属性）
     dante_cloth = "dante_cloth",  -- 边狱巴士-但丁的外套
     sinner_cloth = "sinner_cloth" -- 边狱巴士-罪人外套
 }

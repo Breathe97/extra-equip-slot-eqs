@@ -1,14 +1,15 @@
 -- 定义背包栏物品
 return {
-    backpack = "swap_backpack",         -- 普通背包
-    piggyback = "swap_piggyback",       -- 猪皮包
-    icepack = "swap_icepack",           -- 保鲜背包
-    krampus_sack = "swap_krampus_sack", -- 坎普斯背包
+    -- 原版物品
+    backpack = "backpack",         -- 普通背包
+    piggyback = "piggyback",       -- 猪皮包
+    icepack = "icepack",           -- 保鲜背包
+    krampus_sack = "krampus_sack", -- 坎普斯背包
     candybag = "candybag",              -- 糖果袋
     seedpouch = "seedpouch",            -- 种子袋
     spicepack = "swap_seasack",         -- 厨师袋
 
-    --背包栏 模组物品
+    -- 模组物品
     mone_seasack = "mone_seasack",        -- 更多物品-海上麻袋
     mone_seedpouch = "mone_seedpouch",    -- 更多物品-妈妈放心种子袋
     thatchpack = "swap_thatchpack",       -- 永不妥协-茅草包

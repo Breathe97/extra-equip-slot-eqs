@@ -216,29 +216,24 @@ local function InitPrefab()
                     matched = inst:HasTag("backpack") or inst:HasTag("candybag") -- 是否有背包、糖果袋标签
                 end
 
-                -- 重写物品装备卸载逻辑
-                local function aaa()
-                end
-
                 if is_symbol_back or matched then
                     inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BODY -- 优先分配到背包栏 如果没有开启护符栏就分配到身体栏
-                    aaa()
                 end
             end
 
             -- 如果开启服装栏
             if GLOBAL.EQUIPSLOTS.BELLY then
-                IsBellySlot() -- 检查是否为服装栏
+                IsBellySlot() -- 检查物品并尝试分配到服装栏
             end
 
             -- 如果开启护符栏
             if GLOBAL.EQUIPSLOTS.NECK then
-                IsNeckSlot() -- 检查是否为护符栏
+                IsNeckSlot() -- 检查物品并尝试分配到护符栏
             end
 
             -- 如果开启背包栏
             if GLOBAL.EQUIPSLOTS.BACK then
-                IsBackSlot() -- 检查是否为背包栏
+                IsBackSlot() -- 检查物品并尝试分配到背包栏
             end
         end)
     end
@@ -247,315 +242,400 @@ InitPrefab()
 
 -- 因为部分物品调整装备栏带来的修复
 local function RepairExtra()
-    -- 看不懂 大概意思就是 声明怎么获取当前人物的物品以及数量、后期怎么堆叠什么的
-    -- 这里参考了该作者的源码 https://steamcommunity.com/sharedfiles/filedetails/?id=1819567085 解决了物品放置的问题
+    -- 开启护符栏后的修复
+    if GLOBAL.EQUIPSLOTS.NECK then
+        -- 重生护符复活：在 SG 状态退出时移除 NECK 槽护符，并清理 swap_body 视觉符号
+        local function fixAmuletRebirth()
+            AddStategraphPostInit("wilson", function(self)
+                -- 获取重生状态（amulet_rebirth 或 rebirth，取决于护符类型）
+                local rebirth_state = self.states["amulet_rebirth"] or self.states["rebirth"]
+                if not rebirth_state then
+                    return
+                end
+
+                local original_rebirth_onexit = rebirth_state.onexit -- 保存原版重生状态的退出函数，后续需在自定义逻辑后调用，确保原版功能不受影响
+
+                rebirth_state.onexit = function(inst)
+                    local item = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.NECK) -- 从 NECK 槽查找护符（原版查 BODY，但现在护符在 NECK）
+
+                    -- 查询到重生护符
+                    if item and item.prefab == "amulet" then
+                        if item then
+                            inst.components.inventory:RemoveItem(item)      -- 从 NECK 槽移除护符
+                            inst.AnimState:ClearOverrideSymbol("swap_body") -- 清理角色身体上的背包/服装贴图残留
+                            item:Remove()                                   -- 销毁护符（防止复活后重复使用）
+                            item.persists = false
+                        end
+                    end
+
+                    -- 执行原版退出函数（如果存在的话）
+                    if original_rebirth_onexit then
+                        original_rebirth_onexit(inst)
+                    end
+                end
+            end)
+        end
+
+        fixAmuletRebirth() -- 修复重生护符问题
+
+        -- 建造护符在制作栏显示 -20% 折扣标记（安全回退 BODY→NECK，不修改函数签名）
+        local function fixSetRecipe()
+            local CraftingInv = GLOBAL.require "widgets/redux/craftingmenu_ingredients"
+            local SetRecipe_base = CraftingInv.SetRecipe -- 原设置配方回调
+
+            -- 重写配方回调
+            CraftingInv.SetRecipe = function(self, ...)
+                local inventory = self.owner.replica.inventory         -- 前玩家的 inventory 副本
+                local orig_GetEquippedItem = inventory.GetEquippedItem -- 原查询物品的方法
+
+                -- 重写物品查询
+                inventory.GetEquippedItem = function(self, eslot)
+                    -- 查询body物品
+                    if eslot == GLOBAL.EQUIPSLOTS.BODY then
+                        return orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.NECK) or orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.BODY) -- 优先查 NECK（建造护符可能在那），找不到再查 BODY
+                    end
+                    return orig_GetEquippedItem(self, eslot)
+                end
+
+                SetRecipe_base(self, ...)                        -- 执行原版（此时 GetEquippedItem 仍被劫持）
+                inventory.GetEquippedItem = orig_GetEquippedItem -- 恢复原版
+            end
+        end
+
+        fixSetRecipe() -- 修复护符栏配方查询
+    end
+
+    -- 开启背包栏后的修复
+    if GLOBAL.EQUIPSLOTS.BACK then
+        -- 统一修复装备视觉：监听人物装备变化，集中管理所有符号层的显示
+        -- 符号分配规则：
+        --   BODY（盔甲） → swap_body
+        --   BODY（服装） → swap_body_tall
+        --   BACK（背包） → backpack
+        local function fixVisual()
+            -- 监听所有角色的装备变化
+            AddPlayerPostInit(function(inst)
+                local function OnEquip(_, data)
+                    if not data or not data.item then
+                        return
+                    end
+
+                    if data.eslot == GLOBAL.EQUIPSLOTS.BACK then
+                        local build = inst.AnimState:GetSymbolOverride("swap_body")
+                        if build then
+                            inst.AnimState:OverrideSymbol("backpack", build, "swap_body") -- 普通系统：设置到 backpack
+                        end
+                    end
+                end
+
+                local function OnUnequip(_, data)
+                    -- 卸载时清除物品上的缓存
+                    if data.eslot == GLOBAL.EQUIPSLOTS.BACK then
+                        -- inst.AnimState:ClearOverrideSymbol("backpack")
+                    end
+                end
+
+                inst:ListenForEvent("equip", OnEquip)
+                inst:ListenForEvent("unequip", OnUnequip)
+            end)
+        end
+
+        fixVisual() -- 统一修复装备视觉
+
+
+        -- 对人物物品变化添加额外的事件
+        -- AddComponentPostInit("inventory", function(self)
+        --     local original_Equip = self.Equip
+        --     -- 这个是装备背包的方法
+        --     self.Equip = function(self, item, old_to_active)
+        --         if original_Equip(self, item, old_to_active) and item and item.components and item.components.equippable then
+        --             local eslot = item.components.equippable.equipslot
+        --             if self.equipslots[eslot] ~= item then
+        --                 if eslot == GLOBAL.EQUIPSLOTS.BACK and item.components.container ~= nil then
+        --                     self.inst:PushEvent("setoverflow", { overflow = item })
+        --                 end
+        --             end
+        --             return true
+        --         else
+        --             return
+        --         end
+        --     end
+        --     -- 监听背包卸载
+        --     self.inst:ListenForEvent("unequip", function(inst, data)
+        --         local inventory = DST and inst.replica.inventory or inst.components.inventory
+        --         if inventory ~= nil then
+        --             local equipment = inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+        --             if equipment and equipment.components.equippable.onequipfn then
+        --                 if equipment.task ~= nil then
+        --                     equipment.task:Cancel()
+        --                     equipment.task = nil
+        --                 end
+        --                 equipment.components.equippable.onequipfn(equipment, inst)
+        --             end
+        --         end
+        --     end)
+
+        --     -- 调整物品叠加到背包时的逻辑
+        --     self.GetOverflowContainer = function()
+        --         if self.ignoreoverflow then
+        --             return
+        --         end
+
+        --         local function isOpencontainers(doer, inst)
+        --             return doer.components.inventory.opencontainers[inst]
+        --         end
+
+        --         local backitem = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+        --         local bodyitem = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY)
+
+        --         if backitem ~= nil and backitem.components.container and isOpencontainers(self.inst, backitem) then
+        --             return backitem.components.container
+        --         elseif bodyitem ~= nil and bodyitem.components.container and isOpencontainers(self.inst, bodyitem) then
+        --             return bodyitem.components.container
+        --         end
+        --     end
+        -- end)
+
+        -- 监听从鬼魂复活事件，重新打开背包容器
+        -- 大门/传送阵/肉块雕像复活时，引擎会关闭所有容器，护符复活没有这个问题
+        -- AddPrefabPostInitAny(function(inst)
+        --     if not GLOBAL.TheWorld.ismastersim then
+        --         return
+        --     end
+        --     -- 只对玩家角色生效（有 inventory 和 health 组件的就是玩家）
+        --     if inst.components.inventory ~= nil and inst.components.health ~= nil then
+        --         inst:ListenForEvent("respawnfromghost", function()
+        --             -- 延迟一帧确保复活流程完全结束
+        --             inst:DoTaskInTime(0, function()
+        --                 local backitem = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+        --                 if backitem and backitem.components.container then
+        --                     -- 检查容器是否已关闭，如果关闭则重新打开
+        --                     if not backitem.components.container:IsOpen() then
+        --                         backitem.components.container:Open(inst)
+        --                     end
+        --                 end
+        --             end)
+        --         end)
+        --     end
+        -- end)
+    end
+
+    -- 参考于 2950481491
+    -- if GLOBAL.EQUIPSLOTS.BELLY then
+    --     -- 5. 当你给“寄居蟹隐士”一件外套时，她会尝试使用旧的装备槽。让我们也用新的.
+    --     -- See `scripts/prefabs/hermitcrab.lua`.
+    --     AddPrefabPostInit("hermitcrab", function(inst)
+    --         if not GLOBAL.TheWorld.ismastersim then
+    --             return
+    --         end
+
+    --         local function iscoat(item)
+    --             return item.components.insulator and item.components.insulator:GetInsulation()
+    --                 >= GLOBAL.TUNING.INSULATION_SMALL
+    --                 and item.components.insulator:GetType() == GLOBAL.SEASONS.WINTER and item.components.equippable
+    --                 and item.components.equippable.equipslot == EQUIPSLOTS_MAP.BELLY
+    --         end
+
+    --         local function getcoat(inst1)
+    --             local equipped = inst1.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
+    --             return inst1.components.inventory:FindItem(function(testitem) return iscoat(testitem) end)
+    --                 or (equipped and iscoat(equipped) and equipped)
+    --         end
+
+    --         -- 添加一个额外的项目监听器.
+    --         -- See `scripts/prefabs/hermitcrab.lua:1011`.
+    --         inst:ListenForEvent("itemget", function(_, data)
+    --             if iscoat(data.item) and GLOBAL.TheWorld.state.issnowing then
+    --                 local TASKS_GIVE_PUFFY_VEST = 11 -- Copy from `prefabs/hermitcrab.lua:57`.
+    --                 inst.components.inventory:Equip(data.item)
+    --                 inst.components.friendlevels:CompleteTask(TASKS_GIVE_PUFFY_VEST)
+    --             end
+    --         end)
+
+    --         -- 覆盖 `ShouldAcceptItem`.
+    --         -- See `scripts/prefabs/hermitcrab.lua:122-123,127`.
+    --         local ShouldAcceptItem_Base = inst.components.trader.test
+    --         inst.components.trader:SetAcceptTest(function(inst1, item)
+    --             return (iscoat(item) and GLOBAL.TheWorld.state.issnowing and not getcoat(inst1))
+    --                 or ShouldAcceptItem_Base(inst1, item)
+    --         end)
+
+    --         -- 覆盖 `OnRefuseItem`.
+    --         -- See `scripts/prefabs/hermitcrab.lua:144-146`.
+    --         local OnRefuseItem_Base = inst.components.trader.onrefuse
+    --         inst.components.trader.onrefuse = function(inst1, giver, item)
+    --             if iscoat(item) then
+    --                 if getcoat(inst1) then
+    --                     inst1.components.npc_talker:Say(GLOBAL.STRINGS
+    --                         .HERMITCRAB_REFUSE_COAT_HASONE
+    --                         [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT_HASONE)])
+    --                 elseif not GLOBAL.TheWorld.state.issnowing then
+    --                     inst1.components.npc_talker:Say(GLOBAL.STRINGS
+    --                         .HERMITCRAB_REFUSE_COAT
+    --                         [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT)])
+    --                 end
+    --             end
+    --             OnRefuseItem_Base(inst, giver, item)
+    --         end
+
+    --         -- 覆盖 `iscoat`.
+    --         -- See `scripts/prefabs/hermitcrab.lua:1363`.
+    --         inst.iscoat = iscoat
+    --         inst.getcoat = getcoat
+    --     end)
+
+    --     -- 6. “寄居蟹隐士”有一个大脑，可以让她在旧装备槽中装备/取消装备外套。让我们也用新的.
+    --     -- See `scripts/brains/hermitcrabbrain.lua`.
+    --     AddBrainPostInit("hermitcrabbrain", function(brain)
+    --         local function using_coat(inst)
+    --             local equipped = inst.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
+    --             return equipped and inst.iscoat(equipped) or nil
+    --         end
+
+    --         local function has_coat(inst)
+    --             return inst.components.inventory:FindItem(function(testitem) return inst.iscoat(testitem) end)
+    --         end
+
+    --         local function EquipCoat(inst)
+    --             local coat = inst.getcoat(inst)
+    --             if coat then
+    --                 inst.components.inventory:Equip(coat)
+    --             end
+    --         end
+
+    --         local function UnequipCoat(inst)
+    --             local item = inst.components.inventory:Unequip(EQUIPSLOTS_MAP.BELLY)
+    --             inst.components.inventory:GiveItem(item)
+    --         end
+
+    --         local new_children = {}
+    --         for _, child in ipairs(brain.bt.root.children) do
+    --             if child.name == "Sequence" and child.children[1].name == "coat" then
+    --                 table.insert(
+    --                     new_children,
+    --                     GLOBAL.IfNode(function()
+    --                         return not brain.inst.sg:HasStateTag("busy") and GLOBAL.TheWorld.state.issnowing
+    --                             and has_coat(brain.inst) and not using_coat(brain.inst)
+    --                     end, "coat", GLOBAL.DoAction(brain.inst, EquipCoat, "coat", true))
+    --                 )
+    --             elseif child.name == "Sequence" and child.children[1].name == "stop coat" then
+    --                 table.insert(
+    --                     new_children,
+    --                     GLOBAL.IfNode(function()
+    --                         return not brain.inst.sg:HasStateTag("busy") and not GLOBAL.TheWorld.state.issnowing
+    --                             and using_coat(brain.inst)
+    --                     end, "stop coat", GLOBAL.DoAction(brain.inst, UnequipCoat, "stop coat", true))
+    --                 )
+    --             else
+    --                 table.insert(new_children, child)
+    --             end
+    --         end
+    --         brain.bt = GLOBAL.BT(brain.inst, GLOBAL.PriorityNode(new_children, 0.5))
+    --     end)
+    -- end
+
+
+    -- 容器堆叠修复：为新增装备槽（BELLY/NECK/BACK）提供正确的物品堆叠容器识别
+    -- 问题背景：原版 GetOverflowContainer 只检查 BODY 和 HEAD 槽位的打开容器。
+    --          当物品被分配到 BELLY 或 BACK 槽时，这些槽位的容器不会被识别为"溢出目标"，
+    --          导致玩家从背包/服装容器中拿取物品时，堆叠/整理逻辑失效。
+    -- 解决思路：重写 GetOverflowContainer，使其覆盖所有可能装有容器的装备槽位。
     local function PrefabPostInit(inst)
-        local function GetOverflowContainer(inst)
+        -- 自定义的溢出容器查找函数，替代 inventory_classified 中的原版函数
+        -- 返回值：当前玩家正打开的某个容器（用于物品堆叠的目标容器），如果没有打开的容器则返回 nil
+        local function GetOverflowContainer()
+            -- 如果设置了忽略溢出标志，则跳过（某些特殊物品或状态需要）
             if inst.ignoreoverflow then
                 return
             end
 
+            -- 原版只检查 body 和 head，这里新增了 back、belly 和 neck
             local backitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BACK)
             local bodyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BODY)
             local headitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.HEAD)
             local bellyitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.BELLY)
+            local neckitem = inst.GetEquippedItem(inst, GLOBAL.EQUIPSLOTS.NECK)
 
-            if backitem ~= nil and backitem.replica
-                and backitem.replica.container and backitem.replica.container._isopen then
-                return backitem.replica.container
-            elseif bodyitem ~= nil and bodyitem.replica
-                and bodyitem.replica.container and bodyitem.replica.container._isopen then
-                return bodyitem.replica.container
-            elseif headitem ~= nil and headitem.replica
-                and headitem.replica.container and headitem.replica.container._isopen then
-                return headitem.replica.container
-            elseif bellyitem ~= nil and bellyitem.replica
-                and bellyitem.replica.container and bellyitem.replica.container._isopen then
-                return bellyitem.replica.container
+            -- 获取指定装备槽位上已打开的容器，如果该槽位没有物品或无容器/未打开则返回 nil
+            local function getOpenContainer(eslot)
+                local item = inst.GetEquippedItem(inst, eslot)
+                if item and item.replica and item.replica.container and item.replica.container._isopen then
+                    return item.replica.container
+                end
             end
+
+            -- 按优先级顺序查找已打开的容器
+            -- 原版只检查 body 和 head，这里新增了 back、belly 和 neck
+            -- 优先级：BACK > BODY > HEAD > BELLY > NECK
+            return getOpenContainer(GLOBAL.EQUIPSLOTS.BACK)
+                or getOpenContainer(GLOBAL.EQUIPSLOTS.BODY)
+                or getOpenContainer(GLOBAL.EQUIPSLOTS.HEAD)
+                or getOpenContainer(GLOBAL.EQUIPSLOTS.BELLY)
+                or getOpenContainer(GLOBAL.EQUIPSLOTS.NECK)
         end
 
-        -- 定义相关的方法然后遍历修改
+        -- 需要替换内部 GetOverflowContainer 引用的方法列表
+        -- 这些方法内部都通过 upvalue（上值）引用了原版的 GetOverflowContainer
+        -- 我们需要用 debug.setupvalue 将它们替换为新版本
         local funclist = {
-            "Has", "UseItemFromInvTile", "ControllerUseItemOnItemFromInvTile", "ControllerUseItemOnSelfFromInvTile",
-            "ControllerUseItemOnSceneFromInvTile", "ReceiveItem", "RemoveIngredients"
+            "Has",                                 -- 检查是否持有某物品
+            "UseItemFromInvTile",                  -- 从物品栏格子使用物品
+            "ControllerUseItemOnItemFromInvTile",  -- 手柄：在物品栏格子上对物品使用物品
+            "ControllerUseItemOnSelfFromInvTile",  -- 手柄：在物品栏格子上对自身使用物品
+            "ControllerUseItemOnSceneFromInvTile", -- 手柄：在物品栏格子上对场景使用物品
+            "ReceiveItem",                         -- 接收物品（拾取/交易等）
+            "RemoveIngredients"                    -- 移除合成材料
         }
 
-        -- 修改指定的方法中的GetOverflowContainer
+        -- 替换函数内部的 upvalue（上值）
+        -- fn：要修改的函数
+        -- path：上值访问路径（如 "GetOverflowContainer"）
+        -- new：要替换的新值
         local function setval(fn, path, new)
             local val = fn
             local prev = nil
             local i
+            -- 按点号分割路径，逐层查找上值
             for entry in path:gmatch("[^%.]+") do
                 i = 1
                 prev = val
+                -- 遍历指定函数的所有上值（upvalue），找到匹配名称的
                 while true do
                     local name, value = GLOBAL.debug.getupvalue(val, i)
                     if name == entry then
                         val = value
                         break
                     elseif name == nil then
-                        return
+                        return -- 没找到，跳过
                     end
                     i = i + 1
                 end
             end
+            -- 替换找到的上值为新函数
             GLOBAL.debug.setupvalue(prev, i, new)
         end
+
+        -- 遍历所有需要修改的方法，将其内部的 GetOverflowContainer 引用替换为新版本
         for _, v in ipairs(funclist) do
             if inst[v] and type(inst[v]) == "function" then
                 setval(inst[v], "GetOverflowContainer", GetOverflowContainer)
             end
         end
 
+        -- 在客户端（非服务器）上，直接暴露新的 GetOverflowContainer 方法
+        -- 因为客户端的一些 UI 逻辑（如物品拖拽）也会调用这个方法
         if not IsServer then
             inst.GetOverflowContainer = GetOverflowContainer
         end
     end
-    AddPrefabPostInit("inventory_classified", PrefabPostInit)
 
-    -- 开启护符栏后的修复
-    if GLOBAL.EQUIPSLOTS.NECK then
-        -- 红护符复活：在 SG 状态退出时移除 NECK 槽护符（复用原版生效的 SG hook 方案，确保消耗正确）
-        -- 并手动清理 swap_body 视觉符号，解决贴图残留问题
-        AddStategraphPostInit("wilson", function(self)
-            local rebirth_state = self.states["amulet_rebirth"] or self.states["rebirth"]
-            if not rebirth_state then
-                return
-            end
-            local original_rebirth_onexit = rebirth_state.onexit
-            rebirth_state.onexit = function(inst)
-                local item = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.NECK)
-                if item and item.prefab == "amulet" then
-                    item = inst.components.inventory:RemoveItem(item)
-                    if item then
-                        -- 在护符销毁前清理视觉符号（原版 onunequip_red 在重生状态会跳过清理）
-                        inst.AnimState:ClearOverrideSymbol("swap_body")
-                        item:Remove()
-                        item.persists = false
-                    end
-                end
-                original_rebirth_onexit(inst)
-            end
-        end)
-
-        -- 建造护符在制作栏显示 -20% 折扣标记（安全回退 BODY→NECK，不修改函数签名）
-        local CraftingInv = GLOBAL.require "widgets/redux/craftingmenu_ingredients"
-        local SetRecipe_base = CraftingInv.SetRecipe
-        CraftingInv.SetRecipe = function(self, ...)
-            local inventory = self.owner.replica.inventory
-            local orig_GetEquippedItem = inventory.GetEquippedItem
-            inventory.GetEquippedItem = function(self, eslot)
-                if eslot == GLOBAL.EQUIPSLOTS.BODY then
-                    -- 先直接查 NECK 槽（绕过 Bug 3 补丁的 BACK→BELLY 回退链）
-                    local item = orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.NECK)
-                    if item ~= nil then
-                        return item
-                    end
-                    -- NECK 为空，再走 BODY 查询（含 Bug 3 回退）
-                    return orig_GetEquippedItem(self, GLOBAL.EQUIPSLOTS.BODY)
-                end
-                return orig_GetEquippedItem(self, eslot)
-            end
-            SetRecipe_base(self, ...)
-            inventory.GetEquippedItem = orig_GetEquippedItem
-        end
-    end
-
-    -- 开启背包栏后的修复
-    if GLOBAL.EQUIPSLOTS.BACK then
-        -- 对人物物品变化添加额外的事件
-        AddComponentPostInit("inventory", function(self, inst)
-            local original_Equip = self.Equip
-            -- 这个是装备背包的方法
-            self.Equip = function(self, item, old_to_active)
-                if original_Equip(self, item, old_to_active) and item and item.components and item.components.equippable then
-                    local eslot = item.components.equippable.equipslot
-                    if self.equipslots[eslot] ~= item then
-                        if eslot == GLOBAL.EQUIPSLOTS.BACK and item.components.container ~= nil then
-                            self.inst:PushEvent("setoverflow", { overflow = item })
-                        end
-                    end
-                    return true
-                else
-                    return
-                end
-            end
-            -- 监听背包卸载
-            self.inst:ListenForEvent("unequip", function(inst, data)
-                local inventory = DST and inst.replica.inventory or inst.components.inventory
-                if inventory ~= nil then
-                    local equipment = inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
-                    if equipment and equipment.components.equippable.onequipfn then
-                        if equipment.task ~= nil then
-                            equipment.task:Cancel()
-                            equipment.task = nil
-                        end
-                        equipment.components.equippable.onequipfn(equipment, inst)
-                    end
-                end
-            end)
-
-            -- 调整物品叠加到背包时的逻辑
-            self.GetOverflowContainer = function()
-                if self.ignoreoverflow then
-                    return
-                end
-
-                local function isOpencontainers(doer, inst)
-                    return doer.components.inventory.opencontainers[inst]
-                end
-
-                local backitem = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
-                local bodyitem = self:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY)
-
-                if backitem ~= nil and backitem.components.container and isOpencontainers(self.inst, backitem) then
-                    return backitem.components.container
-                elseif bodyitem ~= nil and bodyitem.components.container and isOpencontainers(self.inst, bodyitem) then
-                    return bodyitem.components.container
-                end
-            end
-        end)
-
-        -- 监听从鬼魂复活事件，重新打开背包容器
-        -- 大门/传送阵/肉块雕像复活时，引擎会关闭所有容器，护符复活没有这个问题
-        AddPrefabPostInitAny(function(inst)
-            if not GLOBAL.TheWorld.ismastersim then
-                return
-            end
-            -- 只对玩家角色生效（有 inventory 和 health 组件的就是玩家）
-            if inst.components.inventory ~= nil and inst.components.health ~= nil then
-                inst:ListenForEvent("respawnfromghost", function()
-                    -- 延迟一帧确保复活流程完全结束
-                    inst:DoTaskInTime(0, function()
-                        local backitem = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
-                        if backitem and backitem.components.container then
-                            -- 检查容器是否已关闭，如果关闭则重新打开
-                            if not backitem.components.container:IsOpen() then
-                                backitem.components.container:Open(inst)
-                            end
-                        end
-                    end)
-                end)
-            end
-        end)
-    end
-
-    -- 参考于 2950481491
-    if GLOBAL.EQUIPSLOTS.BELLY then
-        -- 5. 当你给“寄居蟹隐士”一件外套时，她会尝试使用旧的装备槽。让我们也用新的.
-        -- See `scripts/prefabs/hermitcrab.lua`.
-        AddPrefabPostInit("hermitcrab", function(inst)
-            if not GLOBAL.TheWorld.ismastersim then
-                return
-            end
-
-            local function iscoat(item)
-                return item.components.insulator and item.components.insulator:GetInsulation()
-                    >= GLOBAL.TUNING.INSULATION_SMALL
-                    and item.components.insulator:GetType() == GLOBAL.SEASONS.WINTER and item.components.equippable
-                    and item.components.equippable.equipslot == EQUIPSLOTS_MAP.BELLY
-            end
-
-            local function getcoat(inst1)
-                local equipped = inst1.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
-                return inst1.components.inventory:FindItem(function(testitem) return iscoat(testitem) end)
-                    or (equipped and iscoat(equipped) and equipped)
-            end
-
-            -- 添加一个额外的项目监听器.
-            -- See `scripts/prefabs/hermitcrab.lua:1011`.
-            inst:ListenForEvent("itemget", function(_, data)
-                if iscoat(data.item) and GLOBAL.TheWorld.state.issnowing then
-                    local TASKS_GIVE_PUFFY_VEST = 11 -- Copy from `prefabs/hermitcrab.lua:57`.
-                    inst.components.inventory:Equip(data.item)
-                    inst.components.friendlevels:CompleteTask(TASKS_GIVE_PUFFY_VEST)
-                end
-            end)
-
-            -- 覆盖 `ShouldAcceptItem`.
-            -- See `scripts/prefabs/hermitcrab.lua:122-123,127`.
-            local ShouldAcceptItem_Base = inst.components.trader.test
-            inst.components.trader:SetAcceptTest(function(inst1, item)
-                return (iscoat(item) and GLOBAL.TheWorld.state.issnowing and not getcoat(inst1))
-                    or ShouldAcceptItem_Base(inst1, item)
-            end)
-
-            -- 覆盖 `OnRefuseItem`.
-            -- See `scripts/prefabs/hermitcrab.lua:144-146`.
-            local OnRefuseItem_Base = inst.components.trader.onrefuse
-            inst.components.trader.onrefuse = function(inst1, giver, item)
-                if iscoat(item) then
-                    if getcoat(inst1) then
-                        inst1.components.npc_talker:Say(GLOBAL.STRINGS
-                            .HERMITCRAB_REFUSE_COAT_HASONE
-                            [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT_HASONE)])
-                    elseif not GLOBAL.TheWorld.state.issnowing then
-                        inst1.components.npc_talker:Say(GLOBAL.STRINGS
-                            .HERMITCRAB_REFUSE_COAT
-                            [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT)])
-                    end
-                end
-                OnRefuseItem_Base(inst, giver, item)
-            end
-
-            -- 覆盖 `iscoat`.
-            -- See `scripts/prefabs/hermitcrab.lua:1363`.
-            inst.iscoat = iscoat
-            inst.getcoat = getcoat
-        end)
-
-        -- 6. “寄居蟹隐士”有一个大脑，可以让她在旧装备槽中装备/取消装备外套。让我们也用新的.
-        -- See `scripts/brains/hermitcrabbrain.lua`.
-        AddBrainPostInit("hermitcrabbrain", function(brain)
-            local function using_coat(inst)
-                local equipped = inst.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
-                return equipped and inst.iscoat(equipped) or nil
-            end
-
-            local function has_coat(inst)
-                return inst.components.inventory:FindItem(function(testitem) return inst.iscoat(testitem) end)
-            end
-
-            local function EquipCoat(inst)
-                local coat = inst.getcoat(inst)
-                if coat then
-                    inst.components.inventory:Equip(coat)
-                end
-            end
-
-            local function UnequipCoat(inst)
-                local item = inst.components.inventory:Unequip(EQUIPSLOTS_MAP.BELLY)
-                inst.components.inventory:GiveItem(item)
-            end
-
-            local new_children = {}
-            for _, child in ipairs(brain.bt.root.children) do
-                if child.name == "Sequence" and child.children[1].name == "coat" then
-                    table.insert(
-                        new_children,
-                        GLOBAL.IfNode(function()
-                            return not brain.inst.sg:HasStateTag("busy") and GLOBAL.TheWorld.state.issnowing
-                                and has_coat(brain.inst) and not using_coat(brain.inst)
-                        end, "coat", GLOBAL.DoAction(brain.inst, EquipCoat, "coat", true))
-                    )
-                elseif child.name == "Sequence" and child.children[1].name == "stop coat" then
-                    table.insert(
-                        new_children,
-                        GLOBAL.IfNode(function()
-                            return not brain.inst.sg:HasStateTag("busy") and not GLOBAL.TheWorld.state.issnowing
-                                and using_coat(brain.inst)
-                        end, "stop coat", GLOBAL.DoAction(brain.inst, UnequipCoat, "stop coat", true))
-                    )
-                else
-                    table.insert(new_children, child)
-                end
-            end
-            brain.bt = GLOBAL.BT(brain.inst, GLOBAL.PriorityNode(new_children, 0.5))
-        end)
+    -- 只要开启了任意新增槽位，就应用这个修复
+    -- 因为即使只开了一个槽位，也需要确保容器堆叠能正确识别该槽位
+    if GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BELLY then
+        AddPrefabPostInit("inventory_classified", PrefabPostInit)
     end
 end
--- RepairExtra()
+RepairExtra()
 
 -- 鼠标显示物品代码
 local function HoverItemCode()
