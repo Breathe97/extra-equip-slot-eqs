@@ -178,68 +178,70 @@ local function InitPrefab()
     if IsServer then
         -- 为所有物品智能分配插槽
         AddPrefabPostInitAny(function(inst)
-            local isBodyPrefab = inst.components.equippable ~= nil and inst.components.equippable.equipslot == 'body' -- 是否为身体栏物品
+            if inst.components.equippable ~= nil then return end   -- 不可装备物品
 
-            if not isBodyPrefab then return end                                                                       -- 不是身体栏物品跳过
+            local equipslot = inst.components.equippable.equipslot -- 物品原所属栏
 
-            local prefab = inst.prefab                                                                                -- 物品名称
+            -- 身体 或者 手持
+            if equipslot == 'body' or equipslot == 'hands' then
+                local prefab = inst.prefab                   -- 物品名称
+                if FORCE_SYMBOL_BODY[prefab] then return end -- 一些模组物品会被误以为是额外的装备 但是它实际上应该在身体栏
 
-            if FORCE_SYMBOL_BODY[prefab] then return end                                                              -- 一些模组物品会被误以为是额外的装备 但是它实际上应该在身体栏
+                -- 检查是否属于强制服装栏
+                if GLOBAL.EQUIPSLOTS.BELLY and FORCE_SYMBOL_BELLY[prefab] then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY -- 分配到服装栏
+                    return
+                end
 
-            -- 检查是否属于强制服装栏
-            if GLOBAL.EQUIPSLOTS.BELLY and FORCE_SYMBOL_BELLY[prefab] then
-                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY -- 分配到服装栏
-                return
-            end
-
-            -- 检查是否属于护符栏
-            if GLOBAL.EQUIPSLOTS.NECK and SYMBOL_NECK[prefab] then
-                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK -- 分配到护符栏
-                return
-            end
-
-            -- 检查是否属于背包栏
-            if GLOBAL.EQUIPSLOTS.BACK and SYMBOL_BACK[prefab] then
-                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK -- 分配到背包栏
-                return
-            end
-
-            -- 检查是否属于服装栏
-            if GLOBAL.EQUIPSLOTS.BELLY and SYMBOL_BELLY[prefab] then
-                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY -- 分配到服装栏
-                return
-            end
-
-            -- 检查是否属于腰包栏
-            if GLOBAL.EQUIPSLOTS.WAIST and SYMBOL_WAIST[prefab] then
-                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.WAIST
-                return
-            end
-
-            -- 当开启自动识别护符栏
-            if GLOBAL.EQUIPSLOTS.NECK and AUTO_SLOTS_NECK then
-                local matched = inst:HasTag("amulet")                             -- 是否有护符标签
-                if matched then
+                -- 检查是否属于护符栏
+                if GLOBAL.EQUIPSLOTS.NECK and SYMBOL_NECK[prefab] then
                     inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK -- 分配到护符栏
                     return
                 end
-            end
 
-            -- 当开启自动识别背包栏
-            if GLOBAL.EQUIPSLOTS.BACK and AUTO_SLOTS_BACK then
-                local matched = inst:HasTag("backpack") or inst:HasTag("candybag") -- 是否有背包、糖果袋标签
-                if matched then
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK  -- 分配到背包栏
+                -- 检查是否属于背包栏
+                if GLOBAL.EQUIPSLOTS.BACK and SYMBOL_BACK[prefab] then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK -- 分配到背包栏
                     return
                 end
-            end
 
-            -- 当开启自动识别服装栏
-            if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
-                local matched = inst.components.waterproofer ~= nil or inst.components.insulator ~= nil or inst.components.rainimmunity ~= nil -- 是否有服装属性（防水/保暖/防雨）
-                if matched then
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY                                                             -- 分配到服装栏
+                -- 检查是否属于服装栏
+                if GLOBAL.EQUIPSLOTS.BELLY and SYMBOL_BELLY[prefab] then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY -- 分配到服装栏
                     return
+                end
+
+                -- 检查是否属于腰包栏
+                if GLOBAL.EQUIPSLOTS.WAIST and SYMBOL_WAIST[prefab] then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.WAIST
+                    return
+                end
+
+                -- 当开启自动识别护符栏
+                if GLOBAL.EQUIPSLOTS.NECK and AUTO_SLOTS_NECK then
+                    local matched = inst:HasTag("amulet")                             -- 是否有护符标签
+                    if matched then
+                        inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK -- 分配到护符栏
+                        return
+                    end
+                end
+
+                -- 当开启自动识别背包栏
+                if GLOBAL.EQUIPSLOTS.BACK and AUTO_SLOTS_BACK then
+                    local matched = inst:HasTag("backpack") or inst:HasTag("candybag") -- 是否有背包、糖果袋标签
+                    if matched then
+                        inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK  -- 分配到背包栏
+                        return
+                    end
+                end
+
+                -- 当开启自动识别服装栏
+                if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
+                    local matched = inst.components.waterproofer ~= nil or inst.components.insulator ~= nil or inst.components.rainimmunity ~= nil -- 是否有服装属性（防水/保暖/防雨）
+                    if matched then
+                        inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY                                                             -- 分配到服装栏
+                        return
+                    end
                 end
             end
         end)
@@ -458,6 +460,7 @@ local function RepairExtra()
             -- 添加一个额外的项目监听器.
             -- See `scripts/prefabs/hermitcrab.lua:1011`.
             inst:ListenForEvent("itemget", function(_, data)
+                if data == nil then return end
                 if iscoat(data.item) and GLOBAL.TheWorld.state.issnowing then
                     local TASKS_GIVE_PUFFY_VEST = 11 -- Copy from `prefabs/hermitcrab.lua:57`.
                     inst.components.inventory:Equip(data.item)
