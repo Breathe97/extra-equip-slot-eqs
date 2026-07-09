@@ -90,34 +90,6 @@ local function InitSlot()
 
         function Inv:RebuildExtraSlots(self)
             -- See `scripts/widgets/inventorybar.lua:212-217`.
-            local W = 68        -- 格子宽度
-            local SEP = 12      -- 格子间隙
-            local INTERSEP = 28 -- 组格子间隙 5个一组
-
-            -- 反正就是计算原始宽度
-            local function CalcTotalWidth(num_slots, num_equip, num_buttons)
-                local slot_group = math.ceil(num_slots / 5)
-                local num_equipintersep = num_buttons > 0 and 1 or 0
-
-                local inventory_w = num_slots * W + (num_slots * SEP) + (slot_group - 1) * (INTERSEP - SEP) -- 物品栏宽度
-                local equip_w = num_equip * W + (num_equip - 1) * SEP                                       -- 装备栏宽度
-                local buttons_w = num_equipintersep * W                                                     -- 最后的按钮宽度
-
-                local offset_x = inventory_w + equip_w + buttons_w                                          -- 总宽度
-                return offset_x
-            end
-
-            local num_slots = self.owner.replica.inventory:GetNumSlots()                                         -- 物品栏个数
-            local num_equip = #self
-                .equipslotinfo                                                                                   -- 装备栏个数
-            local do_self_inspect = not (self.controller_build or GLOBAL.GetGameModeProperty("no_avatar_popup")) -- 不知道啥意思
-
-            local scale_default = 1.22                                                                           -- See `scripts/widgets/inventorybar.lua:261-262`. 原始缩放值
-            local total_w_default = CalcTotalWidth(num_slots, 3, 1)                                              -- 默认宽度
-            local total_w_real = CalcTotalWidth(num_slots, num_equip, do_self_inspect and 1 or 0)                -- 现在的宽度
-            local scale_real = scale_default /
-                (total_w_default / total_w_real)                                                                 -- 稍微改了下 我有强迫症 我想把 total_w_default 放中间
-
             -- 添加额外格子
             if self.addextraslots == nil then
                 self.addextraslots = 1
@@ -135,23 +107,62 @@ local function InitSlot()
                 end
             end
 
+            local W = 68                                                           -- 格子宽度
+            local SEP = 12                                                         -- 格子间隙
+            local INTERSEP = 28                                                    -- 组格子间隙 5个一组
+            local inv_x = self.inv[#self.inv]:GetPosition().x + W * 0.5 + INTERSEP -- 装备栏起始坐标
+
+            -- 计算原始宽度
+            local function CalcTotalWidth(num_slots, num_equip, num_buttons)
+                local slot_group = math.ceil(num_slots / 5)
+                local num_equipintersep = num_buttons > 0 and 1 or 0
+
+                local inventory_w = num_slots * W + (num_slots * SEP) + (slot_group - 1) * (INTERSEP - SEP) -- 物品栏宽度
+                local equip_w = num_equip * W + (num_equip - 1) * SEP                                       -- 装备栏宽度
+                local buttons_w = num_equipintersep * W                                                     -- 最后的按钮宽度
+
+                local offset_x = inventory_w + equip_w + buttons_w                                          -- 总宽度
+                return offset_x
+            end
+
+            local num_slots = self.owner.replica.inventory:GetNumSlots()                                         -- 物品栏个数
+            local num_equip = #self.equipslotinfo                                                                -- 装备栏个数
+            local do_self_inspect = not (self.controller_build or GLOBAL.GetGameModeProperty("no_avatar_popup")) -- 不知道啥意思
+
+            local scale_default = 1.22                                                                           -- See `scripts/widgets/inventorybar.lua:261-262`. 原始缩放值
+            local total_w_default = CalcTotalWidth(num_slots, 3, 1)                                              -- 默认宽度
+            local total_w_real = CalcTotalWidth(num_slots, num_equip, do_self_inspect and 1 or 0)                -- 现在的宽度
+            local scale_real = scale_default / (total_w_default / total_w_real)                                  -- 稍微改了下 我有强迫症 我想把 total_w_default 放中间
+
             -- 修正贴图
             self.bg:SetScale(scale_real, 1, 1)
             self.bgcover:SetScale(scale_real, 1, 1)
 
             -- 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
             if GLOBAL.EQUIPSLOTS.BACK ~= nil and num_equip > 3 and self.integrated_arrow then
-                local x = self.inv[#self.inv]:GetPosition().x + W * 0.5 + INTERSEP + 61 -- 原始位置
+                local x = inv_x + W + SEP                                                  -- 背包栏原始x坐标
+                local new_x = self.equip[GLOBAL.EQUIPSLOTS.BACK]:GetPosition().x - W * 0.5 -- 背包栏新x坐标
+                local offset_x = new_x - x                                                 -- 偏移距离
 
-                -- 原图宽度 = 1格子 + 1sep + 0.5格子
-                local tex_w = 1.5 * W + 1 * SEP -- 127.6
-                local new_w = (num_equip - 0.5) * W + (num_equip - 1) * SEP
-                local scale_x = new_w / tex_w
-                local compensation = (new_w - tex_w) / 2
-                local offset_x = x + compensation
+                local old_tex_x = inv_x + 61                                               -- 箭头原始x坐标（+61是因为原版贴图就有便宜）
+                local tex_x = old_tex_x + (offset_x * 0.5)                                 -- 箭头新x坐标 （因为要缩放箭头 所以取一半）
 
-                self.integrated_arrow:SetScale(scale_x, 1, 1)
-                self.integrated_arrow:SetPosition(offset_x, 8)
+                local tex_w = W + SEP + W * 0.5                                            -- 箭头原图宽度 = 1格子 + 1sep + 0.5格子
+                local new_tex_w = tex_w + offset_x                                         -- 箭头新宽度
+
+                local scale_x = new_tex_w / tex_w                                          -- 箭头缩放倍率
+
+                self.integrated_arrow:SetPosition(tex_x, 8)                                -- 设置x坐标
+                self.integrated_arrow:SetScale(scale_x, 1, 1)                              -- 设置缩放
+            end
+
+            -- 指南针 HUD 位置修正：将指南针 HUD 移至实际栏位上方
+            -- 原版写死在手持栏位置，改为跟随腰包栏位置（若启用）
+            if GLOBAL.EQUIPSLOTS.WAIST ~= nil and self.equip[GLOBAL.EQUIPSLOTS.WAIST] ~= nil then
+                local waist_x = self.equip[GLOBAL.EQUIPSLOTS.WAIST]:GetPosition().x
+                local compass_y = self.integrated_arrow ~= nil and 80 or 40
+                self.hudcompass:SetPosition(waist_x, compass_y, 0)
+                self.hand_inv:SetPosition(waist_x, compass_y, 0)
             end
         end
 
@@ -251,6 +262,121 @@ InitPrefab()
 
 -- 因为部分物品调整装备栏带来的修复
 local function RepairExtra()
+    -- 开启服装栏后的修复 参考于 2950481491
+    if GLOBAL.EQUIPSLOTS.BELLY then
+        -- 当你给“寄居蟹隐士”一件外套时，她会尝试使用旧的装备槽。让我们也用新的.
+        -- See `scripts/prefabs/hermitcrab.lua`.
+        AddPrefabPostInit("hermitcrab", function(inst)
+            if not GLOBAL.TheWorld.ismastersim then
+                return
+            end
+
+            local function iscoat(item)
+                return item.components.insulator and item.components.insulator:GetInsulation()
+                    >= GLOBAL.TUNING.INSULATION_SMALL
+                    and item.components.insulator:GetType() == GLOBAL.SEASONS.WINTER and item.components.equippable
+                    and item.components.equippable.equipslot == EQUIPSLOTS_MAP.BELLY
+            end
+
+            local function getcoat(inst1)
+                local equipped = inst1.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
+                return inst1.components.inventory:FindItem(function(testitem) return iscoat(testitem) end)
+                    or (equipped and iscoat(equipped) and equipped)
+            end
+
+            -- 添加一个额外的项目监听器.
+            -- See `scripts/prefabs/hermitcrab.lua:1011`.
+            inst:ListenForEvent("itemget", function(_, data)
+                if data == nil then return end
+                if iscoat(data.item) and GLOBAL.TheWorld.state.issnowing then
+                    local TASKS_GIVE_PUFFY_VEST = 11 -- Copy from `prefabs/hermitcrab.lua:57`.
+                    inst.components.inventory:Equip(data.item)
+                    inst.components.friendlevels:CompleteTask(TASKS_GIVE_PUFFY_VEST)
+                end
+            end)
+
+            -- 覆盖 `ShouldAcceptItem`.
+            -- See `scripts/prefabs/hermitcrab.lua:122-123,127`.
+            local ShouldAcceptItem_Base = inst.components.trader.test
+            inst.components.trader:SetAcceptTest(function(inst1, item)
+                return (iscoat(item) and GLOBAL.TheWorld.state.issnowing and not getcoat(inst1))
+                    or ShouldAcceptItem_Base(inst1, item)
+            end)
+
+            -- 覆盖 `OnRefuseItem`.
+            -- See `scripts/prefabs/hermitcrab.lua:144-146`.
+            local OnRefuseItem_Base = inst.components.trader.onrefuse
+            inst.components.trader.onrefuse = function(inst1, giver, item)
+                if iscoat(item) then
+                    if getcoat(inst1) then
+                        inst1.components.npc_talker:Say(GLOBAL.STRINGS
+                            .HERMITCRAB_REFUSE_COAT_HASONE
+                            [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT_HASONE)])
+                    elseif not GLOBAL.TheWorld.state.issnowing then
+                        inst1.components.npc_talker:Say(GLOBAL.STRINGS
+                            .HERMITCRAB_REFUSE_COAT
+                            [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT)])
+                    end
+                end
+                OnRefuseItem_Base(inst, giver, item)
+            end
+
+            -- 覆盖 `iscoat`.
+            -- See `scripts/prefabs/hermitcrab.lua:1363`.
+            inst.iscoat = iscoat
+            inst.getcoat = getcoat
+        end)
+
+        -- “寄居蟹隐士”有一个大脑，可以让她在旧装备槽中装备/取消装备外套。让我们也用新的.
+        -- See `scripts/brains/hermitcrabbrain.lua`.
+        AddBrainPostInit("hermitcrabbrain", function(brain)
+            local function using_coat(inst)
+                local equipped = inst.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
+                return equipped and inst.iscoat(equipped) or nil
+            end
+
+            local function has_coat(inst)
+                return inst.components.inventory:FindItem(function(testitem) return inst.iscoat(testitem) end)
+            end
+
+            local function EquipCoat(inst)
+                local coat = inst.getcoat(inst)
+                if coat then
+                    inst.components.inventory:Equip(coat)
+                end
+            end
+
+            local function UnequipCoat(inst)
+                local item = inst.components.inventory:Unequip(EQUIPSLOTS_MAP.BELLY)
+                inst.components.inventory:GiveItem(item)
+            end
+
+            local new_children = {}
+            for _, child in ipairs(brain.bt.root.children) do
+                if child.name == "Sequence" and child.children[1].name == "coat" then
+                    table.insert(
+                        new_children,
+                        GLOBAL.IfNode(function()
+                            return not brain.inst.sg:HasStateTag("busy") and GLOBAL.TheWorld.state.issnowing
+                                and has_coat(brain.inst) and not using_coat(brain.inst)
+                        end, "coat", GLOBAL.DoAction(brain.inst, EquipCoat, "coat", true))
+                    )
+                elseif child.name == "Sequence" and child.children[1].name == "stop coat" then
+                    table.insert(
+                        new_children,
+                        GLOBAL.IfNode(function()
+                            return not brain.inst.sg:HasStateTag("busy") and not GLOBAL.TheWorld.state.issnowing
+                                and using_coat(brain.inst)
+                        end, "stop coat", GLOBAL.DoAction(brain.inst, UnequipCoat, "stop coat", true))
+                    )
+                else
+                    table.insert(new_children, child)
+                end
+            end
+            brain.bt = GLOBAL.BT(brain.inst, GLOBAL.PriorityNode(new_children, 0.5))
+        end)
+    end
+
     -- 开启护符栏后的修复
     if GLOBAL.EQUIPSLOTS.NECK then
         -- 重生护符复活：在 SG 状态退出时移除 NECK 槽护符，并清理 swap_body 视觉符号
@@ -435,121 +561,39 @@ local function RepairExtra()
         end)
     end
 
-    -- 开启服装栏后的修复 参考于 2950481491
-    if GLOBAL.EQUIPSLOTS.BELLY then
-        -- 当你给“寄居蟹隐士”一件外套时，她会尝试使用旧的装备槽。让我们也用新的.
-        -- See `scripts/prefabs/hermitcrab.lua`.
-        AddPrefabPostInit("hermitcrab", function(inst)
-            if not GLOBAL.TheWorld.ismastersim then
-                return
-            end
-
-            local function iscoat(item)
-                return item.components.insulator and item.components.insulator:GetInsulation()
-                    >= GLOBAL.TUNING.INSULATION_SMALL
-                    and item.components.insulator:GetType() == GLOBAL.SEASONS.WINTER and item.components.equippable
-                    and item.components.equippable.equipslot == EQUIPSLOTS_MAP.BELLY
-            end
-
-            local function getcoat(inst1)
-                local equipped = inst1.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
-                return inst1.components.inventory:FindItem(function(testitem) return iscoat(testitem) end)
-                    or (equipped and iscoat(equipped) and equipped)
-            end
-
-            -- 添加一个额外的项目监听器.
-            -- See `scripts/prefabs/hermitcrab.lua:1011`.
-            inst:ListenForEvent("itemget", function(_, data)
-                if data == nil then return end
-                if iscoat(data.item) and GLOBAL.TheWorld.state.issnowing then
-                    local TASKS_GIVE_PUFFY_VEST = 11 -- Copy from `prefabs/hermitcrab.lua:57`.
-                    inst.components.inventory:Equip(data.item)
-                    inst.components.friendlevels:CompleteTask(TASKS_GIVE_PUFFY_VEST)
+    -- 开启腰包栏后的修复
+    if GLOBAL.EQUIPSLOTS.WAIST then
+        -- 修复指南针 HUD 适配腰包栏
+        -- 原版 TryCompass 只检查 EQUIPSLOTS.HANDS，腰包指南针无法触发 HUD
+        AddGlobalClassPostConstruct("widgets/hudcompass", "HudCompass", function(self)
+            -- 卸下腰包指南针时关闭 HUD
+            self.inst:ListenForEvent("unequip", function(inst, data)
+                if data.eslot == GLOBAL.EQUIPSLOTS.WAIST then
+                    self:CloseCompass()
                 end
-            end)
+            end, self.owner)
 
-            -- 覆盖 `ShouldAcceptItem`.
-            -- See `scripts/prefabs/hermitcrab.lua:122-123,127`.
-            local ShouldAcceptItem_Base = inst.components.trader.test
-            inst.components.trader:SetAcceptTest(function(inst1, item)
-                return (iscoat(item) and GLOBAL.TheWorld.state.issnowing and not getcoat(inst1))
-                    or ShouldAcceptItem_Base(inst1, item)
-            end)
-
-            -- 覆盖 `OnRefuseItem`.
-            -- See `scripts/prefabs/hermitcrab.lua:144-146`.
-            local OnRefuseItem_Base = inst.components.trader.onrefuse
-            inst.components.trader.onrefuse = function(inst1, giver, item)
-                if iscoat(item) then
-                    if getcoat(inst1) then
-                        inst1.components.npc_talker:Say(GLOBAL.STRINGS
-                            .HERMITCRAB_REFUSE_COAT_HASONE
-                            [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT_HASONE)])
-                    elseif not GLOBAL.TheWorld.state.issnowing then
-                        inst1.components.npc_talker:Say(GLOBAL.STRINGS
-                            .HERMITCRAB_REFUSE_COAT
-                            [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT)])
+            -- 刷新背包时检查腰包栏
+            self.inst:ListenForEvent("refreshinventory", function()
+                if self.owner.replica.inventory ~= nil then
+                    local equipment = self.owner.replica.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.WAIST)
+                    if equipment ~= nil and equipment:HasTag("compass") then
+                        self:OpenCompass()
                     end
                 end
-                OnRefuseItem_Base(inst, giver, item)
-            end
+            end, self.owner)
 
-            -- 覆盖 `iscoat`.
-            -- See `scripts/prefabs/hermitcrab.lua:1363`.
-            inst.iscoat = iscoat
-            inst.getcoat = getcoat
-        end)
-
-        -- “寄居蟹隐士”有一个大脑，可以让她在旧装备槽中装备/取消装备外套。让我们也用新的.
-        -- See `scripts/brains/hermitcrabbrain.lua`.
-        AddBrainPostInit("hermitcrabbrain", function(brain)
-            local function using_coat(inst)
-                local equipped = inst.components.inventory:GetEquippedItem(EQUIPSLOTS_MAP.BELLY)
-                return equipped and inst.iscoat(equipped) or nil
-            end
-
-            local function has_coat(inst)
-                return inst.components.inventory:FindItem(function(testitem) return inst.iscoat(testitem) end)
-            end
-
-            local function EquipCoat(inst)
-                local coat = inst.getcoat(inst)
-                if coat then
-                    inst.components.inventory:Equip(coat)
+            -- 初始化时检查腰包栏（原版 TryCompass 只查 HANDS）
+            self.inst:DoTaskInTime(0, function()
+                if self.owner.replica.inventory ~= nil then
+                    local equipment = self.owner.replica.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.WAIST)
+                    if equipment ~= nil and equipment:HasTag("compass") then
+                        self:OpenCompass()
+                    end
                 end
-            end
-
-            local function UnequipCoat(inst)
-                local item = inst.components.inventory:Unequip(EQUIPSLOTS_MAP.BELLY)
-                inst.components.inventory:GiveItem(item)
-            end
-
-            local new_children = {}
-            for _, child in ipairs(brain.bt.root.children) do
-                if child.name == "Sequence" and child.children[1].name == "coat" then
-                    table.insert(
-                        new_children,
-                        GLOBAL.IfNode(function()
-                            return not brain.inst.sg:HasStateTag("busy") and GLOBAL.TheWorld.state.issnowing
-                                and has_coat(brain.inst) and not using_coat(brain.inst)
-                        end, "coat", GLOBAL.DoAction(brain.inst, EquipCoat, "coat", true))
-                    )
-                elseif child.name == "Sequence" and child.children[1].name == "stop coat" then
-                    table.insert(
-                        new_children,
-                        GLOBAL.IfNode(function()
-                            return not brain.inst.sg:HasStateTag("busy") and not GLOBAL.TheWorld.state.issnowing
-                                and using_coat(brain.inst)
-                        end, "stop coat", GLOBAL.DoAction(brain.inst, UnequipCoat, "stop coat", true))
-                    )
-                else
-                    table.insert(new_children, child)
-                end
-            end
-            brain.bt = GLOBAL.BT(brain.inst, GLOBAL.PriorityNode(new_children, 0.5))
+            end)
         end)
     end
-
 
     -- 容器堆叠修复：为新增装备槽（BELLY/NECK/BACK）提供正确的物品堆叠容器识别
     -- 问题背景：原版 GetOverflowContainer 只检查 BODY 和 HEAD 槽位的打开容器。
