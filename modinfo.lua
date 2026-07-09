@@ -97,6 +97,24 @@ configuration_options = {
         default = true
     },
     {
+        name = "SLOTS_WAIST",
+        label = "腰包栏",
+        hover = "是否扩展腰包栏",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "下都下了，你确定不开启？"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "会额外扩展一个腰包栏。"
+            }
+        },
+        default = true
+    },
+    {
         name = "AUTO_SLOTS_BELLY",
         label = "自动识别服装栏物品",
         hover = "通过物品的名称自动识别该物品是否为服装类",
@@ -333,6 +351,24 @@ if not isZh then
                     description = "Yes",
                     data = true,
                     hover = "An additional backpack compartment will be added."
+                }
+            },
+            default = true
+        },
+        {
+            name = "SLOTS_WAIST",
+            label = "Waist bag slot",
+            hover = "Do you want to expand the waist bag slot",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "It's all down, are you sure you don't want to open it?"
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "An additional waist bag slot will be added."
                 }
             },
             default = true

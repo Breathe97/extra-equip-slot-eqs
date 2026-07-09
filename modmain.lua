@@ -4,9 +4,12 @@ local DST = GLOBAL.TheSim:GetGameID() == "DST"
 local SLOTS_BELLY = GetModConfigData("SLOTS_BELLY")
 local SLOTS_NECK = GetModConfigData("SLOTS_NECK")
 local SLOTS_BACK = GetModConfigData("SLOTS_BACK")
+local SLOTS_WAIST = GetModConfigData("SLOTS_WAIST")
+
 local AUTO_SLOTS_BELLY = GetModConfigData("AUTO_SLOTS_BELLY")
 local AUTO_SLOTS_NECK = GetModConfigData("AUTO_SLOTS_NECK")
 local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
+
 local HOVER_ITEM_CODE = GetModConfigData("HOVER_ITEM_CODE")
 local MOD_HYCS_YHFF = GetModConfigData("MOD_HYCS_YHFF")
 local MOD_YBTX_BELLY = GetModConfigData("MOD_YBTX_BELLY")
@@ -16,6 +19,8 @@ local MOD_XE_YMYD = GetModConfigData("MOD_XE_YMYD")
 local SYMBOL_BELLY = require("symbol_belly")             -- 定义服装栏物品
 local SYMBOL_NECK = require("symbol_neck")               -- 定义护符栏物品
 local SYMBOL_BACK = require("symbol_back")               -- 定义背包栏物品
+local SYMBOL_WAIST = require("symbol_waist")             -- 定义腰包栏物品
+
 local FORCE_SYMBOL_BODY = require("force_symbol_body")   -- 定义强制身体栏物品
 local FORCE_SYMBOL_BELLY = require("force_symbol_belly") -- 定义强制服装栏物品
 
@@ -28,7 +33,7 @@ local function CalibrationSymBol()
     if not MOD_XE_YMYD then
         SYMBOL_BELLY['myxl_dreambook'] = nil
     end
-    -- 如果不开启强制服装栏 清空 trunkvest_summer 表
+    -- 如果不开启强制服装栏 清空 FORCE_SYMBOL_BELLY 表
     if MOD_YBTX_BELLY == false then
         FORCE_SYMBOL_BELLY['trunkvest_summer'] = nil
         FORCE_SYMBOL_BELLY['trunkvest_winter'] = nil
@@ -53,6 +58,8 @@ Assets = {
     Asset("ATLAS", "assets/equip_slot_neck/equip_slot_neck.xml"),   -- 护符栏atlas
     Asset("IMAGE", "assets/equip_slot_back/equip_slot_back.tex"),   -- 背包栏图标
     Asset("ATLAS", "assets/equip_slot_back/equip_slot_back.xml"),   -- 背包栏atlas
+    Asset("IMAGE", "assets/equip_slot_waist/equip_slot_waist.tex"), -- 腰包栏图标
+    Asset("ATLAS", "assets/equip_slot_waist/equip_slot_waist.xml")  -- 腰包栏atlas
 }
 
 -- 定义装备栏插槽
@@ -63,7 +70,8 @@ EQUIPSLOTS_MAP = {
     -- HEAD = "head" -- 头部
     BELLY = SLOTS_BELLY and "extra_slots_belly" or nil, -- 身体-扩展-腹部-衣服
     NECK = SLOTS_NECK and "extra_slots_neck" or nil,    -- 身体-扩展-颈部-护符
-    BACK = SLOTS_BACK and "extra_slots_back" or nil     -- 身体-扩展-背部-背包
+    BACK = SLOTS_BACK and "extra_slots_back" or nil,    -- 身体-扩展-背部-背包
+    WAIST = SLOTS_WAIST and "extra_slots_waist" or nil  -- 身体-扩展-腰部-腰包
 }
 
 -- 申明插槽
@@ -121,6 +129,9 @@ local function InitSlot()
                 end
                 if GLOBAL.EQUIPSLOTS.BACK ~= nil then
                     self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "assets/equip_slot_back/equip_slot_back.xml", "equip_slot_back.tex") -- 背包栏图标
+                end
+                if GLOBAL.EQUIPSLOTS.WAIST ~= nil then
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.WAIST, "assets/equip_slot_waist/equip_slot_waist.xml", "equip_slot_waist.tex") -- 腰包栏图标
                 end
             end
 
@@ -196,6 +207,12 @@ local function InitPrefab()
             -- 检查是否属于服装栏
             if GLOBAL.EQUIPSLOTS.BELLY and SYMBOL_BELLY[prefab] then
                 inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY -- 分配到服装栏
+                return
+            end
+
+            -- 检查是否属于腰包栏
+            if GLOBAL.EQUIPSLOTS.WAIST and SYMBOL_WAIST[prefab] then
+                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.WAIST
                 return
             end
 
@@ -302,6 +319,7 @@ local function RepairExtra()
             local neck_build = nil      -- 护符贴图
             local back_build = nil      -- 背包贴图
             local back_skin_build = nil -- 背包皮肤贴图
+            local waist_build = nil     -- 腰包贴图
 
             --重写贴图渲染逻辑
             -- 已变色光谱背包的贴图是额外的，只能一直挂在 swap_body 所以只能将 swap_body 让给背包
@@ -310,7 +328,7 @@ local function RepairExtra()
                 player.AnimState:ClearOverrideSymbol("swap_body_tall")                                     -- 先卸载swap_body_tall
                 -- 必须依次执行否则可能出现异常
                 player:DoTaskInTime(0, function()                                                          -- 第1帧
-                    local old_build = body_build or belly_build or neck_build                              -- 新身体栏贴图 优先级：护甲 > 服装 > 护符
+                    local old_build = body_build or belly_build or neck_build or waist_build               -- 新身体栏贴图 优先级：护甲 > 服装 > 护符
                     if old_build then                                                                      -- 如果有新身体栏贴图
                         player.AnimState:OverrideSymbol("swap_body_tall", old_build, "swap_body")          -- 重新设置到swap_body
                     end
@@ -352,6 +370,11 @@ local function RepairExtra()
                     back_skin_build = data.item:GetSkinBuild()  -- 记录当前物品的贴图
                 end
 
+                -- 腰包栏
+                if data.eslot == GLOBAL.EQUIPSLOTS.WAIST then
+                    waist_build = data.item.AnimState:GetBuild()
+                end
+
                 RefreshEquipOverrides()
             end)
 
@@ -378,6 +401,11 @@ local function RepairExtra()
                 if data.eslot == GLOBAL.EQUIPSLOTS.BACK then
                     back_build = nil
                     back_skin_build = nil
+                end
+
+                -- 腰包栏
+                if data.eslot == GLOBAL.EQUIPSLOTS.WAIST then
+                    waist_build = nil
                 end
                 RefreshEquipOverrides()
             end)
@@ -550,6 +578,7 @@ local function RepairExtra()
                 or getOpenContainer(GLOBAL.EQUIPSLOTS.HEAD)
                 or getOpenContainer(GLOBAL.EQUIPSLOTS.BELLY)
                 or getOpenContainer(GLOBAL.EQUIPSLOTS.NECK)
+                or getOpenContainer(GLOBAL.EQUIPSLOTS.WAIST)
         end
 
         -- 需要替换内部 GetOverflowContainer 引用的方法列表
@@ -609,7 +638,7 @@ local function RepairExtra()
 
     -- 只要开启了任意新增槽位，就应用这个修复
     -- 因为即使只开了一个槽位，也需要确保容器堆叠能正确识别该槽位
-    if GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BELLY then
+    if GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.WAIST then
         AddPrefabPostInit("inventory_classified", PrefabPostInit)
     end
 
@@ -626,7 +655,7 @@ local function RepairExtra()
             end
 
             -- 检查新增装备槽的打开容器
-            for _, eslot in ipairs({ GLOBAL.EQUIPSLOTS.BACK, GLOBAL.EQUIPSLOTS.BELLY, GLOBAL.EQUIPSLOTS.NECK }) do
+            for _, eslot in ipairs({ GLOBAL.EQUIPSLOTS.BACK, GLOBAL.EQUIPSLOTS.BELLY, GLOBAL.EQUIPSLOTS.NECK, GLOBAL.EQUIPSLOTS.WAIST }) do
                 if eslot then
                     local item = self:GetEquippedItem(eslot)
                     if item and item.components.container and item.components.container:IsOpen() then
@@ -638,7 +667,7 @@ local function RepairExtra()
     end
 
     -- 服务器端：只要开启了任意新增槽位，就应用这个修复
-    if IsServer and (GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BELLY) then
+    if IsServer and (GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.WAIST) then
         AddComponentPostInit("inventory", ServerInventoryPostInit)
     end
 end
