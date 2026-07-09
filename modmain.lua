@@ -442,7 +442,6 @@ local function RepairExtra()
     if GLOBAL.EQUIPSLOTS.BACK then
         -- 修复背包贴图
         AddPlayerPostInit(function(player)
-
             local equipped_items = {
                 body = nil,  -- 护甲物品
                 belly = nil, -- 服装物品
@@ -457,32 +456,30 @@ local function RepairExtra()
             local function RefreshEquipOverrides()
                 player.AnimState:ClearOverrideSymbol("swap_body_tall") -- 先卸载swap_body_tall
 
+                -- 设置贴图
+                local function setSymbol(item, oldsymbol)
+                    local build = item.AnimState:GetBuild()                                     -- 原版物品贴图
+                    if build then                                                               -- 如果背包原版贴图存在
+                        player.AnimState:OverrideSymbol(oldsymbol, build, "swap_body")          -- 设置原版物品贴图
+                    end
+                    local skin_build = item:GetSkinBuild()                                      -- 背包皮肤贴图
+                    if skin_build and skin_build ~= '' then                                     -- 如果背包皮肤贴图存在
+                        player.AnimState:OverrideSkinSymbol(oldsymbol, skin_build, "swap_body") -- 设置皮肤物品贴图
+                    end
+                end
 
                 -- 设置身体栏贴图
                 local function setBodySymbol()
-                    local item = equipped_items.body or equipped_items.belly or equipped_items.neck    -- 不需要显示指南针
+                    local item = equipped_items.body or equipped_items.belly or equipped_items.neck -- 不需要显示指南针
                     if item == nil then return end
-                    local build = item.AnimState:GetBuild()                                            -- 原版物品贴图
-                    local skin_build = item:GetSkinBuild()                                             -- 背包皮肤贴图
-                    if skin_build and skin_build ~= '' then                                            -- 如果背包皮肤贴图存在
-                        player.AnimState:OverrideSkinSymbol("swap_body_tall", skin_build, "swap_body") -- 设置皮肤物品贴图
-                    elseif build then                                                                  -- 如果背包原版贴图存在
-                        player.AnimState:OverrideSymbol("swap_body_tall", build, "swap_body")          -- 设置原版物品贴图
-                    end
+                    setSymbol(item, 'swap_body_tall')
                 end
 
                 -- 设置背包栏贴图
                 local function setBackSymbol()
-                    local item = equipped_items.back                                              -- 背包栏物品
+                    local item = equipped_items.back -- 背包栏物品
                     if item == nil then return end
-                    local build = item.AnimState:GetBuild()                                       -- 原版物品贴图
-                    local skin_build = item:GetSkinBuild()                                        -- 背包皮肤贴图
-
-                    if skin_build and skin_build ~= '' then                                       -- 如果背包皮肤贴图存在
-                        player.AnimState:OverrideSkinSymbol("swap_body", skin_build, "swap_body") -- 设置皮肤物品贴图
-                    elseif build then                                                             -- 如果背包原版贴图存在
-                        player.AnimState:OverrideSymbol("swap_body", build, "swap_body")          -- 设置原版物品贴图
-                    end
+                    setSymbol(item, 'swap_body')
                 end
 
                 -- 必须依次执行否则可能出现异常
