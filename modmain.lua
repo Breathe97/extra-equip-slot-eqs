@@ -178,7 +178,7 @@ local function InitPrefab()
     if IsServer then
         -- 为所有物品智能分配插槽
         AddPrefabPostInitAny(function(inst)
-            if inst.components.equippable ~= nil then return end   -- 不可装备物品
+            if inst.components.equippable == nil then return end   -- 不可装备物品
 
             local equipslot = inst.components.equippable.equipslot -- 物品原所属栏
 
