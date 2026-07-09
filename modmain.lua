@@ -46,7 +46,14 @@ CalibrationSymBol()
 local Inv = GLOBAL.require "widgets/inventorybar"
 
 -- 引用图片资源
-Assets = { Asset("IMAGE", "images/equip_slots.tex"), Asset("ATLAS", "images/equip_slots.xml") }
+Assets = {
+    Asset("IMAGE", "assets/equip_slot_belly/equip_slot_belly.tex"), -- 服装栏图标
+    Asset("ATLAS", "assets/equip_slot_belly/equip_slot_belly.xml"), -- 服装栏atlas
+    Asset("IMAGE", "assets/equip_slot_neck/equip_slot_neck.tex"),   -- 护符栏图标
+    Asset("ATLAS", "assets/equip_slot_neck/equip_slot_neck.xml"),   -- 护符栏atlas
+    Asset("IMAGE", "assets/equip_slot_back/equip_slot_back.tex"),   -- 背包栏图标
+    Asset("ATLAS", "assets/equip_slot_back/equip_slot_back.xml"),   -- 背包栏atlas
+}
 
 -- 定义装备栏插槽
 EQUIPSLOTS_MAP = {
@@ -107,13 +114,13 @@ local function InitSlot()
             if self.addextraslots == nil then
                 self.addextraslots = 1
                 if GLOBAL.EQUIPSLOTS.BELLY ~= nil then
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BELLY, "images/equip_slots.xml", "belly.tex")
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BELLY, "assets/equip_slot_belly/equip_slot_belly.xml", "equip_slot_belly.tex") -- 服装栏图标
                 end
                 if GLOBAL.EQUIPSLOTS.NECK ~= nil then
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.NECK, "images/equip_slots.xml", "neck.tex")
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.NECK, "assets/equip_slot_neck/equip_slot_neck.xml", "equip_slot_neck.tex") -- 护符栏图标
                 end
                 if GLOBAL.EQUIPSLOTS.BACK ~= nil then
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "images/equip_slots.xml", "back.tex")
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "assets/equip_slot_back/equip_slot_back.xml", "equip_slot_back.tex") -- 背包栏图标
                 end
             end
 
