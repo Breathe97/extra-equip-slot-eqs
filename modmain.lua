@@ -497,9 +497,9 @@ local function RepairExtra()
 
                 -- 必须依次执行否则可能出现异常
                 player:DoTaskInTime(0, function()                                             -- 第1帧
-                    setBodySymbol()
+                    setBackSymbol()
                     player:DoTaskInTime(0, function()                                         -- 第2帧
-                        setBackSymbol()
+                        setBodySymbol()
                         player:DoTaskInTime(0, function()                                     -- 第3帧
                             player.AnimState:SetSymbolExchange("swap_body_tall", "swap_body") -- 设置贴图层级 1 < 2 < 3 （swap_body_tall 在 swap_body 下面 ）
                         end)
