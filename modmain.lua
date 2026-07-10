@@ -1,5 +1,4 @@
 local IsServer = GLOBAL.TheNet:GetIsServer()
-local DST = GLOBAL.TheSim:GetGameID() == "DST"
 
 local SLOTS_BELLY = GetModConfigData("SLOTS_BELLY")
 local SLOTS_NECK = GetModConfigData("SLOTS_NECK")
@@ -88,7 +87,7 @@ local function InitSlot()
         local Inv_Refresh_base = Inv.Refresh or nil
         local Inv_Rebuild_base = Inv.Rebuild or nil
 
-        function Inv:RebuildExtraSlots(self)
+        function Inv:RebuildExtraSlots()
             -- See `scripts/widgets/inventorybar.lua:212-217`.
             -- 添加额外格子
             if self.addextraslots == nil then
@@ -170,14 +169,14 @@ local function InitSlot()
             if Inv_Rebuild_base then
                 Inv_Rebuild_base(self)
             end
-            Inv:RebuildExtraSlots(self)
+            Inv:RebuildExtraSlots()
         end
 
         function Inv:Refresh()
             if Inv_Refresh_base then
                 Inv_Refresh_base(self)
             end
-            Inv:RebuildExtraSlots(self)
+            Inv:RebuildExtraSlots()
         end
     end
     AddGlobalClassPostConstruct("widgets/inventorybar", "Inv", PostConstruct)
@@ -395,12 +394,10 @@ local function RepairExtra()
 
                     -- 查询到重生护符
                     if item and item.prefab == "amulet" then
-                        if item then
-                            inst.components.inventory:RemoveItem(item)      -- 从 NECK 槽移除护符
-                            inst.AnimState:ClearOverrideSymbol("swap_body") -- 清理角色身体上的背包/服装贴图残留
-                            item:Remove()                                   -- 销毁护符（防止复活后重复使用）
-                            item.persists = false
-                        end
+                        inst.components.inventory:RemoveItem(item)      -- 从 NECK 槽移除护符
+                        inst.AnimState:ClearOverrideSymbol("swap_body") -- 清理角色身体上的背包/服装贴图残留
+                        item.persists = false
+                        item:Remove()                                   -- 销毁护符（防止复活后重复使用）
                     end
 
                     -- 执行原版退出函数（如果存在的话）
@@ -451,33 +448,49 @@ local function RepairExtra()
             }
 
             --重写贴图渲染逻辑
-            -- 已变色光谱背包的贴图是额外的，只能一直挂在 swap_body 所以只能将 swap_body 让给背包
-            -- 还有一个 swap_body_tall 可以分配给其他身体栏物品 但是需要重设层级 swap_body > swap_body_tall
             local function RefreshEquipOverrides()
-                player.AnimState:ClearOverrideSymbol("swap_body_tall") -- 先卸载swap_body_tall
+                player.AnimState:ClearOverrideSymbol("swap_body_tall") -- 先卸载swap_body_tall（swap_body 游戏引擎内部会卸载）
 
                 -- 设置贴图
-                local function setSymbol(item, oldsymbol)
-                    local build = item.AnimState:GetBuild()                                     -- 原版物品贴图
-                    if build then                                                               -- 如果背包原版贴图存在
-                        player.AnimState:OverrideSymbol(oldsymbol, build, "swap_body")          -- 设置原版物品贴图
+                local function setSymbol(item, symbolName)
+                    local build = item.AnimState:GetBuild()                                      -- 原版物品贴图
+                    if build then                                                                -- 如果背包原版贴图存在
+                        player.AnimState:OverrideSymbol(symbolName, build, "swap_body")          -- 设置原版物品贴图
                     end
-                    local skin_build = item:GetSkinBuild()                                      -- 背包皮肤贴图
-                    if skin_build and skin_build ~= '' then                                     -- 如果背包皮肤贴图存在
-                        player.AnimState:OverrideSkinSymbol(oldsymbol, skin_build, "swap_body") -- 设置皮肤物品贴图
+                    local skin_build = item:GetSkinBuild()                                       -- 背包皮肤贴图
+                    if skin_build and skin_build ~= '' then                                      -- 如果背包皮肤贴图存在
+                        player.AnimState:OverrideSkinSymbol(symbolName, skin_build, "swap_body") -- 设置皮肤物品贴图
                     end
+                end
+
+                -- 设置背包栏贴图
+                -- 大部分背包都可以直接分配到 swap_body_tall，但是已变色的光谱背包只能设置在swap_body
+                -- 因为只有 swap_body 支持它的变色组件，然而额外的变色组件是叠加在 swap_body 上，所以可以与其他物品的贴图共存
+                local function setBackSymbol()
+                    local item = equipped_items.back -- 背包栏物品
+                    if item == nil then return end
+
+                    -- 是否为已变色的光谱背包
+                    local function isSpectralBackpack()
+                        if item.components.colouradder == nil then return end -- 无颜色叠加器组件
+                        -- 通过 colouradder 检测当前颜色
+                        local r, g, b, a = item.components.colouradder:GetCurrentColour()
+                        local is_color_changed = (r ~= 0 or g ~= 0 or b ~= 0)
+                        return is_color_changed
+                    end
+
+                    -- 让已变色的光谱背包留在swap_body
+                    if isSpectralBackpack() then
+                        setSymbol(item, 'swap_body')
+                        return
+                    end
+
+                    setSymbol(item, 'swap_body_tall')
                 end
 
                 -- 设置身体栏贴图
                 local function setBodySymbol()
                     local item = equipped_items.body or equipped_items.belly or equipped_items.neck -- 不需要显示指南针
-                    if item == nil then return end
-                    setSymbol(item, 'swap_body_tall')
-                end
-
-                -- 设置背包栏贴图
-                local function setBackSymbol()
-                    local item = equipped_items.back -- 背包栏物品
                     if item == nil then return end
                     setSymbol(item, 'swap_body')
                 end
