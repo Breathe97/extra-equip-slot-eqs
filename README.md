@@ -31,6 +31,52 @@
 
 模组已适配部分常见模组物品；如果你希望补充适配，可在创意工坊留言，提供“物品英文名 + 中文名 + 所属模组名称”。
 
+## 🔧 背包贴图渲染逻辑
+
+### 三类背包贴图
+
+| 类型 | 说明 | 示例 |
+|------|------|------|
+| 1️⃣ 无皮肤 | 原版默认贴图 | `backpack` |
+| 2️⃣ 普通有皮肤 | 静态皮肤贴图替换 | `backpack_deerclops` |
+| 3️⃣ 光谱背包 | `backpack_labrat` 系列，带有动态变色粒子特效 | `labrat`(默认)、`labrat_blue`、`labrat_green`、`labrat_yellow` |
+
+### 渲染分层方案
+
+游戏角色身上有两个相关的符号位：
+- **`swap_body`**：顶层符号，身体护甲/服装/护符都在此渲染。护符类物品（如重生护符）的默认贴图只能挂在此符号。
+- **`swap_body_tall`**：底层符号，位于 `swap_body` 下层。
+
+分配规则：
+
+| 物品 | 分配到 |
+|------|--------|
+| 身体护甲 / 服装 / 护符 | `swap_body` |
+| 普通背包（无皮肤 / 普通皮肤 / 未变色的光谱背包） | `swap_body_tall` |
+| **已变色的光谱背包**（颜色非默认） | `swap_body` |
+
+### 为什么已变色光谱背包必须用 `swap_body`
+
+光谱背包（`backpack_labrat`）的变色+发光效果由 `colouradder`（颜色叠加器）和 `bloomer`（发光）组件实现。这些组件基于游戏引擎的皮肤系统工作，而引擎的皮肤渲染管线**只作用于 `swap_body` 符号**——`swap_body_tall` 不支持 `OverrideSkinSymbol` 的变色/发光效果。
+
+因此已变色的光谱背包必须放在 `swap_body`，否则颜色叠加和发光效果无法激活。
+
+### 护甲与背包共存原理
+
+`OverrideSymbol`（贴图替换）和 `SetAddColour`（颜色叠加）是两条独立的渲染管线：
+
+1. `swap_body` 上的纹理由后写入的 `OverrideSymbol` 决定（护甲覆盖背包）
+2. 光谱背包的粒子颜色由 `colouradder` 独立控制，不依赖 `swap_body` 的具体纹理
+
+因此护甲纹理覆盖背包纹理时，光谱背包的颜色粒子依然正常显示在 `swap_body` 位置。
+
+### 执行顺序
+
+```lua
+Frame 1: setBackSymbol()   → 已变色光谱背包写入 swap_body
+Frame 2: setBodySymbol()   → 护甲/服装/护符覆盖 swap_body（后写覆盖纹理，不影响粒子颜色）
+Frame 3: SetSymbolExchange(swap_body_tall, swap_body) → 设置层级
+
 ## 📝 更新日志
 
 - 2.0.9：优化分配逻辑，重构贴图渲染逻辑以支持背包与护甲同时显示
