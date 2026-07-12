@@ -87,7 +87,7 @@ local function InitSlot()
         local Inv_Refresh_base = Inv.Refresh or nil
         local Inv_Rebuild_base = Inv.Rebuild or nil
 
-        function Inv:RebuildExtraSlots()
+        function Inv:RebuildExtraSlots(self)
             -- See `scripts/widgets/inventorybar.lua:212-217`.
             -- 添加额外格子
             if self.addextraslots == nil then
@@ -169,14 +169,14 @@ local function InitSlot()
             if Inv_Rebuild_base then
                 Inv_Rebuild_base(self)
             end
-            Inv:RebuildExtraSlots()
+            Inv:RebuildExtraSlots(self)
         end
 
         function Inv:Refresh()
             if Inv_Refresh_base then
                 Inv_Refresh_base(self)
             end
-            Inv:RebuildExtraSlots()
+            Inv:RebuildExtraSlots(self)
         end
     end
     AddGlobalClassPostConstruct("widgets/inventorybar", "Inv", PostConstruct)
@@ -447,19 +447,55 @@ local function RepairExtra()
                 waist = nil, -- 腰包物品
             }
 
+            -- 护符合名映射表：item.prefab → torso_amulets 构建中的符号名
+            local AMULET_SYMBOL_MAP = {
+                amulet = "redamulet",
+                blueamulet = "blueamulet",
+                purpleamulet = "purpleamulet",
+                orangeamulet = "orangeamulet",
+                yellowamulet = "yellowamulet",
+                greenamulet = "greenamulet",
+            }
+
             --重写贴图渲染逻辑
+            -- 是否为已变色的光谱背包
+            -- local function isSpectralBackpack()
+            --     if item.components.colouradder == nil then return end -- 无颜色叠加器组件
+            --     -- 通过 colouradder 检测当前颜色
+            --     local r, g, b, a = item.components.colouradder:GetCurrentColour()
+            --     local is_color_changed = (r ~= 0 or g ~= 0 or b ~= 0)
+            --     return is_color_changed
+            -- end
+
+            -- -- 让已变色的光谱背包留在swap_body
+            -- if isSpectralBackpack() then
+            --     setSymbol(item, 'swap_body_tall')
+            --     return
+            -- end
+
+            -- 即使可以使用上面代码判断已变色光谱背包让它留在swap_body，但是原版swap_body_tall在 swap_body层级之上。
+            -- 如果当装备该物品时swap_body_tall的原版变色皮肤会盖住swap_body的变色贴图。
+            -- 因此除非动态变更贴图层级否则贴图显示依然有问题。
+            -- 最终 将swap_body让给背包栏，然后将其他身体贴图渲染到swap_body_tall，让将层级设置为swap_body > swap_body_tall
             local function RefreshEquipOverrides()
                 player.AnimState:ClearOverrideSymbol("swap_body_tall") -- 先卸载swap_body_tall（swap_body 游戏引擎内部会卸载）
 
                 -- 设置贴图
-                local function setSymbol(item, symbolName)
-                    local build = item.AnimState:GetBuild()                                      -- 原版物品贴图
-                    if build then                                                                -- 如果背包原版贴图存在
-                        player.AnimState:OverrideSymbol(symbolName, build, "swap_body")          -- 设置原版物品贴图
+                local function setSymbol(item, oldsymbol)
+                    local skin_build = item:GetSkinBuild()                                      -- 皮肤贴图
+                    if skin_build and skin_build ~= '' then                                     -- 如果皮肤贴图存在
+                        player.components.talker:Say("skin_build: " .. skin_build)
+                        player.AnimState:OverrideSkinSymbol(oldsymbol, skin_build, 'swap_body') -- 设置皮肤物品贴图
                     end
-                    local skin_build = item:GetSkinBuild()                                       -- 背包皮肤贴图
-                    if skin_build and skin_build ~= '' then                                      -- 如果背包皮肤贴图存在
-                        player.AnimState:OverrideSkinSymbol(symbolName, skin_build, "swap_body") -- 设置皮肤物品贴图
+                    local build = item.AnimState:GetBuild()                                     -- 原版物品贴图
+                    if build then                                                               -- 如果原版贴图存在
+                        player.AnimState:OverrideSymbol(oldsymbol, build, 'swap_body')          -- 设置原版物品贴图
+                    end
+
+                    -- 护符特殊处理：护符使用双构建系统
+                    local amulet_symbol = AMULET_SYMBOL_MAP[item.prefab]
+                    if amulet_symbol then
+                        player.AnimState:OverrideSymbol(oldsymbol, "torso_amulets", amulet_symbol)
                     end
                 end
 
@@ -469,40 +505,22 @@ local function RepairExtra()
                 local function setBackSymbol()
                     local item = equipped_items.back -- 背包栏物品
                     if item == nil then return end
-
-                    -- 是否为已变色的光谱背包
-                    local function isSpectralBackpack()
-                        if item.components.colouradder == nil then return end -- 无颜色叠加器组件
-                        -- 通过 colouradder 检测当前颜色
-                        local r, g, b, a = item.components.colouradder:GetCurrentColour()
-                        local is_color_changed = (r ~= 0 or g ~= 0 or b ~= 0)
-                        return is_color_changed
-                    end
-
-                    -- 让已变色的光谱背包留在swap_body
-                    if isSpectralBackpack() then
-                        setSymbol(item, 'swap_body')
-                        return
-                    end
-
-                    setSymbol(item, 'swap_body_tall')
+                    setSymbol(item, 'swap_body')
                 end
 
                 -- 设置身体栏贴图
                 local function setBodySymbol()
-                    local item = equipped_items.body or equipped_items.belly or equipped_items.neck -- 不需要显示指南针
+                    local item = equipped_items.body or equipped_items.belly or equipped_items.neck -- 不渲染指南针
                     if item == nil then return end
-                    setSymbol(item, 'swap_body')
+                    setSymbol(item, 'swap_body_tall')
                 end
 
                 -- 必须依次执行否则可能出现异常
-                player:DoTaskInTime(0, function()                                             -- 第1帧
-                    setBackSymbol()
-                    player:DoTaskInTime(0, function()                                         -- 第2帧
-                        setBodySymbol()
-                        player:DoTaskInTime(0, function()                                     -- 第3帧
-                            player.AnimState:SetSymbolExchange("swap_body_tall", "swap_body") -- 设置贴图层级 1 < 2 < 3 （swap_body_tall 在 swap_body 下面 ）
-                        end)
+                player:DoTaskInTime(0, function()                                         -- 第1帧
+                    setBackSymbol()                                                       -- 先设置背包贴图
+                    player:DoTaskInTime(0, function()                                     -- 第2帧
+                        setBodySymbol()                                                   -- 再设置身体贴图
+                        player.AnimState:SetSymbolExchange("swap_body_tall", "swap_body") -- 设置贴图层级 1 < 2 < 3 （swap_body_tall 在 swap_body 下面 ）
                     end)
                 end)
             end
