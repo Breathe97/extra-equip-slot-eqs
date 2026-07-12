@@ -8,6 +8,7 @@ return {
     candybag = "candybag",         -- 糖果袋
     seedpouch = "seedpouch",       -- 种子袋
     spicepack = "spicepack",       -- 厨师袋
+    onemanband = "onemanband",     -- 独奏乐器
 
     -- 模组物品
     mone_seasack = "mone_seasack",     -- 更多物品-海上麻袋

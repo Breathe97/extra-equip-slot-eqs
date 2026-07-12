@@ -497,6 +497,11 @@ local function RepairExtra()
                     if amulet_symbol then
                         player.AnimState:OverrideSymbol(oldsymbol, "torso_amulets", amulet_symbol)
                     end
+
+                    -- 独奏乐器特殊处理：onemanband 使用 "swap_body_tall" 作为源符号名，而不是常规的 "swap_body"
+                    if item.prefab == 'onemanband' then
+                        player.AnimState:OverrideSymbol(oldsymbol, build, 'swap_body_tall')
+                    end
                 end
 
                 -- 设置背包栏贴图

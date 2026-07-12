@@ -2,7 +2,6 @@
 return {
     -- 原版物品
     raincoat = "raincoat",                 -- 雨衣
-    onemanband = "onemanband",             -- 独奏乐器
     sweatervest = "sweatervest",           -- 犬牙背心
     beargervest = "beargervest",           -- 熊皮大衣
     balloonvest = "balloonvest",           -- 充气背心
