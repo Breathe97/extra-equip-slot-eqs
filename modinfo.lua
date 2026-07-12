@@ -112,7 +112,7 @@ configuration_options = {
                 hover = "会额外扩展一个腰包栏。"
             }
         },
-        default = true
+        default = false
     },
     {
         name = "AUTO_SLOTS_BELLY",
@@ -371,7 +371,7 @@ if not isZh then
                     hover = "An additional waist bag slot will be added."
                 }
             },
-            default = true
+            default = false
         },
         {
             name = "AUTO_SLOTS_BELLY",
