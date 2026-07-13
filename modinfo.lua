@@ -8,10 +8,10 @@ description = [[
 󰀜 其他模组的适配可以留言（物品的英文+中文+模组的名称）。
 
 󰀏 近期更新：
+2.2.0：新增头饰栏，用于装备非护甲的头饰物品。
 2.1.2：将腰包栏默认值改为关闭。
 2.1.1：将独奏乐器从腹部栏移至背部栏。
 2.1.0：重构装备栏贴图渲染逻辑，解决原版护符渲染的问题。
-2.0.9：优化分配逻辑，重构贴图渲染逻辑以支持背包护甲同时显示。
 
 󰀀 图标也抄过来了 嘻嘻。
                     󰀜󰀝󰀀󰀞󰀘󰀁󰀟󰀠󰀡󰀂󰀪󰀕󰀫󰀖󰀛󰀬󰀭󰀮󰀰󰀉󰀚󰀊󰀋󰀌󰀍
@@ -22,7 +22,7 @@ priority = 1                       -- 优先级 默认0 值越大 优先级越�
 
 author = "Breathe"                 -- mod的作者
 
-version = "2.1.2"                  -- mod的版本号
+version = "2.2.0"                  -- mod的版本号
 
 api_version = 10                   -- API版本号
 
@@ -43,6 +43,24 @@ server_filter_tags = { "refresh", "Krampus", "private" } -- 服务器标签可�
 configuration_options = {
     { name = "", label = "基本配置", hover = "", options = { { description = "", data = 0 } }, default = 0 },
     {
+        name = "SLOTS_HAT",
+        label = "头饰栏",
+        hover = "是否扩展头饰栏",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "下都下了，你确定不开启？"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "会额外扩展一个头饰栏，用于装备非护甲的头部物品。"
+            }
+        },
+        default = false
+    },
+    {
         name = "SLOTS_BELLY",
         label = "服装栏",
         hover = "是否扩展服装栏",
@@ -58,7 +76,25 @@ configuration_options = {
                 hover = "会额外扩展一个服装栏。"
             }
         },
-        default = true
+        default = false
+    },
+    {
+        name = "SLOTS_WAIST",
+        label = "腰包栏",
+        hover = "是否扩展腰包栏",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "下都下了，你确定不开启？"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "会额外扩展一个腰包栏。"
+            }
+        },
+        default = false
     },
     {
         name = "SLOTS_NECK",
@@ -97,9 +133,9 @@ configuration_options = {
         default = true
     },
     {
-        name = "SLOTS_WAIST",
-        label = "腰包栏",
-        hover = "是否扩展腰包栏",
+        name = "AUTO_SLOTS_HAT",
+        label = "自动识别头饰栏物品",
+        hover = "通过物品的属性自动识别该物品是否为非护甲头饰类",
         options = {
             {
                 description = "否",
@@ -109,10 +145,10 @@ configuration_options = {
             {
                 description = "是",
                 data = true,
-                hover = "会额外扩展一个腰包栏。"
+                hover = "自动识别未知的模组头饰物品并分配至头饰栏。"
             }
         },
-        default = false
+        default = true
     },
     {
         name = "AUTO_SLOTS_BELLY",
@@ -168,6 +204,7 @@ configuration_options = {
         },
         default = true
     },
+
 
     {
         name = "",
@@ -289,262 +326,149 @@ local isZh = locale == "zh" or locale == "zhr"
 -- 非中文
 if not isZh then
     configuration_options = {
+        { name = "", label = "Basic configuration", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
-            name = "",
-            label = "Basic configuration",
-            hover = "",
+            name = "SLOTS_HAT",
+            label = "Headwear slot",
+            hover = "Enable the headwear slot",
             options = {
-                {
-                    description = "",
-                    data = 0
-                }
+                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true, hover = "Adds an extra slot for non-armor head items." }
             },
-            default = 0
+            default = false
         },
         {
             name = "SLOTS_BELLY",
-            label = "Clothing section",
-            hover = "Do you want to expand the clothing section",
+            label = "Apparel slot",
+            hover = "Enable the apparel slot",
             options = {
-                {
-                    description = "No",
-                    data = false,
-                    hover = "It's all down, are you sure you don't want to open it?"
-                },
-                {
-                    description = "Yes",
-                    data = true,
-                    hover = "An additional clothing column will be added."
-                }
+                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true, hover = "Adds an extra slot for wearable apparel." }
             },
-            default = true
+            default = false
+        },
+        {
+            name = "SLOTS_WAIST",
+            label = "Waist slot",
+            hover = "Enable the waist slot",
+            options = {
+                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true, hover = "Adds an extra slot for waist bag items." }
+            },
+            default = false
         },
         {
             name = "SLOTS_NECK",
-            label = "Talisman slot",
-            hover = "Do you want to expand the talisman bar",
+            label = "Amulet slot",
+            hover = "Enable the amulet slot",
             options = {
-                {
-                    description = "No",
-                    data = false,
-                    hover = "It's all down, are you sure you don't want to open it?"
-                },
-                {
-                    description = "Yes",
-                    data = true,
-                    hover = "An additional talisman bar will be added."
-                }
+                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true, hover = "Adds an extra slot for amulets." }
             },
             default = true
         },
         {
             name = "SLOTS_BACK",
             label = "Backpack slot",
-            hover = "Do you want to expand the backpack compartment",
+            hover = "Enable the backpack slot",
             options = {
-                {
-                    description = "No",
-                    data = false,
-                    hover = "It's all down, are you sure you don't want to open it?"
-                },
-                {
-                    description = "Yes",
-                    data = true,
-                    hover = "An additional backpack compartment will be added."
-                }
+                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true, hover = "Adds an extra slot for backpacks." }
             },
             default = true
         },
         {
-            name = "SLOTS_WAIST",
-            label = "Waist bag slot",
-            hover = "Do you want to expand the waist bag slot",
+            name = "AUTO_SLOTS_HAT",
+            label = "Auto-detect headwear",
+            hover = "Auto-detect non-armor head items by their attributes",
             options = {
-                {
-                    description = "No",
-                    data = false,
-                    hover = "It's all down, are you sure you don't want to open it?"
-                },
-                {
-                    description = "Yes",
-                    data = true,
-                    hover = "An additional waist bag slot will be added."
-                }
+                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true, hover = "Auto-assign unknown mod headwear to the headwear slot." }
             },
-            default = false
+            default = true
         },
         {
             name = "AUTO_SLOTS_BELLY",
-            label = "Automatically identify items in the clothing column",
-            hover = "Automatically identify whether an item belongs to the clothing category by its name",
+            label = "Auto-detect apparel",
+            hover = "Auto-detect apparel items by their attributes",
             options = {
-                {
-                    description = "No",
-                    data = false,
-                    hover = "TIt's all down, are you sure you don't want to open it?"
-                },
-                {
-                    description = "Yes",
-                    data = true,
-                    hover = "Automatically identify unknown module items and assign them to the clothing column."
-                }
+                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true, hover = "Auto-assign unknown mod apparel to the apparel slot." }
             },
             default = true
         },
         {
             name = "AUTO_SLOTS_NECK",
-            label = "Automatically identify items in the talisman bar",
-            hover = "Automatically identify whether an item belongs to the talisman category by its name",
+            label = "Auto-detect amulets",
+            hover = "Auto-detect amulet items by their tags",
             options = {
-                {
-                    description = "No",
-                    data = false,
-                    hover = "It's all down, are you sure you don't want to open it?"
-                },
-                {
-                    description = "Yes",
-                    data = true,
-                    hover = "Automatically identify unknown module items and assign them to the talisman bar."
-                }
+                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true, hover = "Auto-assign unknown mod amulets to the amulet slot." }
             },
             default = true
         },
         {
             name = "AUTO_SLOTS_BACK",
-            label = "Automatically identify backpack items",
-            hover = "Automatically identify whether an item belongs to the backpack category by its name",
+            label = "Auto-detect backpacks",
+            hover = "Auto-detect backpack items by their tags",
             options = {
-                {
-                    description = "No",
-                    data = false,
-                    hover = "It's all down, are you sure you don't want to open it?"
-                },
-                {
-                    description = "Yes",
-                    data = true,
-                    hover = "Automatically identify unknown module items and assign them to the backpack compartment."
-                }
+                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true, hover = "Auto-assign unknown mod backpacks to the backpack slot." }
             },
             default = true
         },
-
-        {
-            name = "",
-            label = "Other configurations (recommended default)",
-            hover = "",
-            options = {
-                {
-                    description = "",
-                    data = 0
-                }
-            },
-            default = 0
-        },
+        { name = "", label = "Other configurations (recommended default)", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
             name = "HOVER_ITEM_CODE",
-            label = "Item information",
-            hover =
-            "After opening, pointing the mouse at the item in the game can view the code information of the item.",
+            label = "Item info",
+            hover = "Show item code info on mouse hover in-game.",
             options = {
-                {
-                    description = "No",
-                    data = false,
-                    hover = "Code information for closing items"
-                },
-                {
-                    description = "Yes",
-                    data = true,
-                    hover = "Display the code information of the item"
-                }
+                { description = "No", data = false, hover = "Disable item code info." },
+                { description = "Yes", data = true, hover = "Display item code info on hover." }
             },
             default = false
         },
-        {
-            name = "",
-            label = "Uncompromising-永不妥协",
-            hover = "",
-            options = { { description = "", data = 0 } },
-            default = 0
-        },
+        { name = "", label = "Uncompromising Mode", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
             name = "MOD_YBTX_BELLY",
-            label = "Mandatory clothing column",
-            hover =
-            "Forcefully identify breathable vests, soft vests, cool summer clothes, floral shirts, and raincoats in the clothing column",
+            label = "Force apparel slot",
+            hover = "Force Breezy Vest, Puffy Vest, Summer Frest, Hawaiian Shirt and Rain Coat into the apparel slot.",
             options = {
-                {
-                    description = "No",
-                    data = false,
-                    hover = "Maintain automatic allocation"
-                },
-                {
-                    description = "Yes",
-                    data = true,
-                    hover = "Mandatory equipment in the clothing store."
-                }
+                { description = "No", data = false, hover = "Keep auto-assignment for these items." },
+                { description = "Yes", data = true, hover = "Force these items into the apparel slot." }
             },
             default = true
         },
         { name = "", label = "Legion-棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
             name = "MOD_LJ_ZGF",
-            label = " Zigui · Cauldron",
-            hover = "Do you recognize the item in the additional equipment compartment",
+            label = "子圭·釜 (Zigui Cauldron)",
+            hover = "Assign this item to an extra equipment slot",
             options = {
-                {
-                    description = "No",
-                    data = false,
-                    hover = "Keep the item in the body compartment."
-                },
-                {
-                    description = "Yes",
-                    data = true,
-                    hover = "该物品会装备在背包栏，有失平衡，谨慎开启。"
-                }
+                { description = "No", data = false, hover = "Keep this item in the body slot." },
+                { description = "Yes", data = true, hover = "Equips in the backpack slot. May unbalance gameplay, enable with caution." }
             },
             default = false
         },
-        {
-            name = "",
-            label = "海洋传说-Legend and sea",
-            hover = "",
-            options = { { description = "", data = 0 } },
-            default = 0
-        },
+        { name = "", label = "Legend and Sea-海洋传说", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
             name = "MOD_HYCS_YHFF",
-            label = "雨花·扶风",
-            hover = "Do you recognize the item in the additional equipment compartment",
+            label = "雨花·扶风 (Yuhua Fufeng)",
+            hover = "Assign this item to an extra equipment slot",
             options = {
-                {
-                    description = "No",
-                    data = false,
-                    hover = ""
-                },
-                {
-                    description = "Yes",
-                    data = true,
-                    hover = "会丢失原模组套装效果：同时装备雨花·涟漪、雨花·冰魄、雨花·扶风，每秒为玩家额外上涨3点潮湿值。"
-                }
+                { description = "No", data = false, hover = "" },
+                { description = "Yes", data = true, hover = "Loses the original set bonus: equipping Lianyi, Bingpo, and Fufeng together grants +3 wetness per second." }
             },
             default = false
         },
         { name = "", label = "璇儿-XuanEr", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
             name = "MOD_XE_YMYD",
-            label = "遗梦芸典",
-            hover = "Do you recognize the item in the additional equipment compartment",
+            label = "遗梦芸典 (Yimeng Yundian)",
+            hover = "Assign this item to an extra equipment slot",
             options = {
-                {
-                    description = "No",
-                    data = false,
-                    hover = "Keep the item in the body compartment."
-                },
-                {
-                    description = "Yes",
-                    data = true,
-                    hover = "This item will be equipped in the clothing section."
-                }
+                { description = "No", data = false, hover = "Keep this item in the body slot." },
+                { description = "Yes", data = true, hover = "This item will be equipped in the apparel slot." }
             },
             default = true
         }

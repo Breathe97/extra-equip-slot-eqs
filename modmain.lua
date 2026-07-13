@@ -4,10 +4,12 @@ local SLOTS_BELLY = GetModConfigData("SLOTS_BELLY")
 local SLOTS_NECK = GetModConfigData("SLOTS_NECK")
 local SLOTS_BACK = GetModConfigData("SLOTS_BACK")
 local SLOTS_WAIST = GetModConfigData("SLOTS_WAIST")
+local SLOTS_HAT = GetModConfigData("SLOTS_HAT")
 
 local AUTO_SLOTS_BELLY = GetModConfigData("AUTO_SLOTS_BELLY")
 local AUTO_SLOTS_NECK = GetModConfigData("AUTO_SLOTS_NECK")
 local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
+local AUTO_SLOTS_HAT = GetModConfigData("AUTO_SLOTS_HAT")
 
 local HOVER_ITEM_CODE = GetModConfigData("HOVER_ITEM_CODE")
 local MOD_HYCS_YHFF = GetModConfigData("MOD_HYCS_YHFF")
@@ -15,10 +17,11 @@ local MOD_YBTX_BELLY = GetModConfigData("MOD_YBTX_BELLY")
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
 local MOD_XE_YMYD = GetModConfigData("MOD_XE_YMYD")
 
+local SYMBOL_HAT = require("symbol_hat")                 -- 定义头饰栏物品
 local SYMBOL_BELLY = require("symbol_belly")             -- 定义服装栏物品
+local SYMBOL_WAIST = require("symbol_waist")             -- 定义腰包栏物品
 local SYMBOL_NECK = require("symbol_neck")               -- 定义护符栏物品
 local SYMBOL_BACK = require("symbol_back")               -- 定义背包栏物品
-local SYMBOL_WAIST = require("symbol_waist")             -- 定义腰包栏物品
 
 local FORCE_SYMBOL_BODY = require("force_symbol_body")   -- 定义强制身体栏物品
 local FORCE_SYMBOL_BELLY = require("force_symbol_belly") -- 定义强制服装栏物品
@@ -51,14 +54,21 @@ local Inv = GLOBAL.require "widgets/inventorybar"
 
 -- 引用图片资源
 Assets = {
+    Asset("IMAGE", "assets/equip_slot_hat/equip_slot_hat.tex"),     -- 头饰栏图标
+    Asset("ATLAS", "assets/equip_slot_hat/equip_slot_hat.xml"),     -- 头饰栏atlas
+
     Asset("IMAGE", "assets/equip_slot_belly/equip_slot_belly.tex"), -- 服装栏图标
     Asset("ATLAS", "assets/equip_slot_belly/equip_slot_belly.xml"), -- 服装栏atlas
+
+    Asset("IMAGE", "assets/equip_slot_waist/equip_slot_waist.tex"), -- 腰包栏图标
+    Asset("ATLAS", "assets/equip_slot_waist/equip_slot_waist.xml"), -- 腰包栏atlas
+
     Asset("IMAGE", "assets/equip_slot_neck/equip_slot_neck.tex"),   -- 护符栏图标
     Asset("ATLAS", "assets/equip_slot_neck/equip_slot_neck.xml"),   -- 护符栏atlas
+
     Asset("IMAGE", "assets/equip_slot_back/equip_slot_back.tex"),   -- 背包栏图标
-    Asset("ATLAS", "assets/equip_slot_back/equip_slot_back.xml"),   -- 背包栏atlas
-    Asset("IMAGE", "assets/equip_slot_waist/equip_slot_waist.tex"), -- 腰包栏图标
-    Asset("ATLAS", "assets/equip_slot_waist/equip_slot_waist.xml")  -- 腰包栏atlas
+    Asset("ATLAS", "assets/equip_slot_back/equip_slot_back.xml")    -- 背包栏atlas
+
 }
 
 -- 定义装备栏插槽
@@ -67,10 +77,11 @@ EQUIPSLOTS_MAP = {
     -- HANDS = "hands", -- 手持
     -- BODY = "body", -- 身体
     -- HEAD = "head" -- 头部
+    HAT = SLOTS_HAT and "extra_slots_hat" or nil,       -- 身体-扩展-头部-头饰
     BELLY = SLOTS_BELLY and "extra_slots_belly" or nil, -- 身体-扩展-腹部-衣服
+    WAIST = SLOTS_WAIST and "extra_slots_waist" or nil, -- 身体-扩展-腰部-腰包
     NECK = SLOTS_NECK and "extra_slots_neck" or nil,    -- 身体-扩展-颈部-护符
-    BACK = SLOTS_BACK and "extra_slots_back" or nil,    -- 身体-扩展-背部-背包
-    WAIST = SLOTS_WAIST and "extra_slots_waist" or nil  -- 身体-扩展-腰部-腰包
+    BACK = SLOTS_BACK and "extra_slots_back" or nil     -- 身体-扩展-背部-背包
 }
 
 -- 申明插槽
@@ -92,17 +103,20 @@ local function InitSlot()
             -- 添加额外格子
             if self.addextraslots == nil then
                 self.addextraslots = 1
+                if GLOBAL.EQUIPSLOTS.HAT ~= nil then
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.HAT, "assets/equip_slot_hat/equip_slot_hat.xml", "equip_slot_hat.tex") -- 头饰栏图标
+                end
                 if GLOBAL.EQUIPSLOTS.BELLY ~= nil then
                     self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BELLY, "assets/equip_slot_belly/equip_slot_belly.xml", "equip_slot_belly.tex") -- 服装栏图标
+                end
+                if GLOBAL.EQUIPSLOTS.WAIST ~= nil then
+                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.WAIST, "assets/equip_slot_waist/equip_slot_waist.xml", "equip_slot_waist.tex") -- 腰包栏图标
                 end
                 if GLOBAL.EQUIPSLOTS.NECK ~= nil then
                     self:AddEquipSlot(GLOBAL.EQUIPSLOTS.NECK, "assets/equip_slot_neck/equip_slot_neck.xml", "equip_slot_neck.tex") -- 护符栏图标
                 end
                 if GLOBAL.EQUIPSLOTS.BACK ~= nil then
                     self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "assets/equip_slot_back/equip_slot_back.xml", "equip_slot_back.tex") -- 背包栏图标
-                end
-                if GLOBAL.EQUIPSLOTS.WAIST ~= nil then
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.WAIST, "assets/equip_slot_waist/equip_slot_waist.xml", "equip_slot_waist.tex") -- 腰包栏图标
                 end
             end
 
@@ -189,12 +203,38 @@ local function InitPrefab()
         -- 为所有物品智能分配插槽
         AddPrefabPostInitAny(function(inst)
             if inst.components.equippable == nil then return end   -- 不可装备物品
-
             local equipslot = inst.components.equippable.equipslot -- 物品原所属栏
+            local prefab = inst.prefab                             -- 物品名称
 
-            -- 身体 或者 手持
-            if equipslot == 'body' or equipslot == 'hands' then
-                local prefab = inst.prefab                   -- 物品名称
+            -- 手持
+            if equipslot == 'head' then
+                -- 检查是否属于腰包栏
+                if GLOBAL.EQUIPSLOTS.WAIST and SYMBOL_WAIST[prefab] then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.WAIST
+                    return
+                end
+            end
+
+            -- 头部
+            if equipslot == 'head' then
+                -- 检查是否属于头饰栏
+                if GLOBAL.EQUIPSLOTS.HAT and SYMBOL_HAT[prefab] then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.HAT -- 分配到头饰栏
+                    return
+                end
+
+                -- 当开启自动识别头饰栏（头部物品且无护甲组件）
+                if GLOBAL.EQUIPSLOTS.HAT and AUTO_SLOTS_HAT then
+                    local matched = equipslot == 'head' and inst.components.armor == nil -- 头部物品且无护甲
+                    if matched then
+                        inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.HAT     -- 分配到头饰栏
+                        return
+                    end
+                end
+            end
+
+            -- 身体
+            if equipslot == 'body' then
                 if FORCE_SYMBOL_BODY[prefab] then return end -- 一些模组物品会被误以为是额外的装备 但是它实际上应该在身体栏
 
                 -- 检查是否属于强制服装栏
@@ -218,12 +258,6 @@ local function InitPrefab()
                 -- 检查是否属于服装栏
                 if GLOBAL.EQUIPSLOTS.BELLY and SYMBOL_BELLY[prefab] then
                     inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY -- 分配到服装栏
-                    return
-                end
-
-                -- 检查是否属于腰包栏
-                if GLOBAL.EQUIPSLOTS.WAIST and SYMBOL_WAIST[prefab] then
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.WAIST
                     return
                 end
 
@@ -740,7 +774,7 @@ local function RepairExtra()
 
     -- 只要开启了任意新增槽位，就应用这个修复
     -- 因为即使只开了一个槽位，也需要确保容器堆叠能正确识别该槽位
-    if GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.WAIST then
+    if GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.WAIST or GLOBAL.EQUIPSLOTS.HAT then
         AddPrefabPostInit("inventory_classified", PrefabPostInit)
     end
 
@@ -757,7 +791,7 @@ local function RepairExtra()
             end
 
             -- 检查新增装备槽的打开容器
-            for _, eslot in ipairs({ GLOBAL.EQUIPSLOTS.BACK, GLOBAL.EQUIPSLOTS.BELLY, GLOBAL.EQUIPSLOTS.NECK, GLOBAL.EQUIPSLOTS.WAIST }) do
+            for _, eslot in ipairs({ GLOBAL.EQUIPSLOTS.BACK, GLOBAL.EQUIPSLOTS.BELLY, GLOBAL.EQUIPSLOTS.NECK, GLOBAL.EQUIPSLOTS.WAIST, GLOBAL.EQUIPSLOTS.HAT }) do
                 if eslot then
                     local item = self:GetEquippedItem(eslot)
                     if item and item.components.container and item.components.container:IsOpen() then
@@ -769,7 +803,7 @@ local function RepairExtra()
     end
 
     -- 服务器端：只要开启了任意新增槽位，就应用这个修复
-    if IsServer and (GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.WAIST) then
+    if IsServer and (GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.WAIST or GLOBAL.EQUIPSLOTS.HAT) then
         AddComponentPostInit("inventory", ServerInventoryPostInit)
     end
 end
