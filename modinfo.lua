@@ -148,7 +148,7 @@ configuration_options = {
                 hover = "自动识别未知的模组头饰物品并分配至头饰栏。"
             }
         },
-        default = true
+        default = false
     },
     {
         name = "AUTO_SLOTS_BELLY",
@@ -326,14 +326,14 @@ local isZh = locale == "zh" or locale == "zhr"
 -- 非中文
 if not isZh then
     configuration_options = {
-        { name = "", label = "Basic configuration", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        { name = "", label = "Basic configuration",                        hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
             name = "SLOTS_HAT",
             label = "Headwear slot",
             hover = "Enable the headwear slot",
             options = {
-                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
-                { description = "Yes", data = true, hover = "Adds an extra slot for non-armor head items." }
+                { description = "No",  data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true,  hover = "Adds an extra slot for non-armor head items." }
             },
             default = false
         },
@@ -342,8 +342,8 @@ if not isZh then
             label = "Apparel slot",
             hover = "Enable the apparel slot",
             options = {
-                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
-                { description = "Yes", data = true, hover = "Adds an extra slot for wearable apparel." }
+                { description = "No",  data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true,  hover = "Adds an extra slot for wearable apparel." }
             },
             default = false
         },
@@ -352,8 +352,8 @@ if not isZh then
             label = "Waist slot",
             hover = "Enable the waist slot",
             options = {
-                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
-                { description = "Yes", data = true, hover = "Adds an extra slot for waist bag items." }
+                { description = "No",  data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true,  hover = "Adds an extra slot for waist bag items." }
             },
             default = false
         },
@@ -362,8 +362,8 @@ if not isZh then
             label = "Amulet slot",
             hover = "Enable the amulet slot",
             options = {
-                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
-                { description = "Yes", data = true, hover = "Adds an extra slot for amulets." }
+                { description = "No",  data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true,  hover = "Adds an extra slot for amulets." }
             },
             default = true
         },
@@ -372,8 +372,8 @@ if not isZh then
             label = "Backpack slot",
             hover = "Enable the backpack slot",
             options = {
-                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
-                { description = "Yes", data = true, hover = "Adds an extra slot for backpacks." }
+                { description = "No",  data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true,  hover = "Adds an extra slot for backpacks." }
             },
             default = true
         },
@@ -382,18 +382,18 @@ if not isZh then
             label = "Auto-detect headwear",
             hover = "Auto-detect non-armor head items by their attributes",
             options = {
-                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
-                { description = "Yes", data = true, hover = "Auto-assign unknown mod headwear to the headwear slot." }
+                { description = "No",  data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true,  hover = "Auto-assign unknown mod headwear to the headwear slot." }
             },
-            default = true
+            default = false
         },
         {
             name = "AUTO_SLOTS_BELLY",
             label = "Auto-detect apparel",
             hover = "Auto-detect apparel items by their attributes",
             options = {
-                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
-                { description = "Yes", data = true, hover = "Auto-assign unknown mod apparel to the apparel slot." }
+                { description = "No",  data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true,  hover = "Auto-assign unknown mod apparel to the apparel slot." }
             },
             default = false
         },
@@ -402,8 +402,8 @@ if not isZh then
             label = "Auto-detect amulets",
             hover = "Auto-detect amulet items by their tags",
             options = {
-                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
-                { description = "Yes", data = true, hover = "Auto-assign unknown mod amulets to the amulet slot." }
+                { description = "No",  data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true,  hover = "Auto-assign unknown mod amulets to the amulet slot." }
             },
             default = true
         },
@@ -412,8 +412,8 @@ if not isZh then
             label = "Auto-detect backpacks",
             hover = "Auto-detect backpack items by their tags",
             options = {
-                { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
-                { description = "Yes", data = true, hover = "Auto-assign unknown mod backpacks to the backpack slot." }
+                { description = "No",  data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true,  hover = "Auto-assign unknown mod backpacks to the backpack slot." }
             },
             default = true
         },
@@ -423,8 +423,8 @@ if not isZh then
             label = "Item info",
             hover = "Show item code info on mouse hover in-game.",
             options = {
-                { description = "No", data = false, hover = "Disable item code info." },
-                { description = "Yes", data = true, hover = "Display item code info on hover." }
+                { description = "No",  data = false, hover = "Disable item code info." },
+                { description = "Yes", data = true,  hover = "Display item code info on hover." }
             },
             default = false
         },
@@ -434,8 +434,8 @@ if not isZh then
             label = "Force apparel slot",
             hover = "Force Breezy Vest, Puffy Vest, Summer Frest, Hawaiian Shirt and Rain Coat into the apparel slot.",
             options = {
-                { description = "No", data = false, hover = "Keep auto-assignment for these items." },
-                { description = "Yes", data = true, hover = "Force these items into the apparel slot." }
+                { description = "No",  data = false, hover = "Keep auto-assignment for these items." },
+                { description = "Yes", data = true,  hover = "Force these items into the apparel slot." }
             },
             default = true
         },
@@ -445,8 +445,8 @@ if not isZh then
             label = "子圭·釜 (Zigui Cauldron)",
             hover = "Assign this item to an extra equipment slot",
             options = {
-                { description = "No", data = false, hover = "Keep this item in the body slot." },
-                { description = "Yes", data = true, hover = "Equips in the backpack slot. May unbalance gameplay, enable with caution." }
+                { description = "No",  data = false, hover = "Keep this item in the body slot." },
+                { description = "Yes", data = true,  hover = "Equips in the backpack slot. May unbalance gameplay, enable with caution." }
             },
             default = false
         },
@@ -456,8 +456,8 @@ if not isZh then
             label = "雨花·扶风 (Yuhua Fufeng)",
             hover = "Assign this item to an extra equipment slot",
             options = {
-                { description = "No", data = false, hover = "" },
-                { description = "Yes", data = true, hover = "Loses the original set bonus: equipping Lianyi, Bingpo, and Fufeng together grants +3 wetness per second." }
+                { description = "No",  data = false, hover = "" },
+                { description = "Yes", data = true,  hover = "Loses the original set bonus: equipping Lianyi, Bingpo, and Fufeng together grants +3 wetness per second." }
             },
             default = false
         },
@@ -467,8 +467,8 @@ if not isZh then
             label = "遗梦芸典 (Yimeng Yundian)",
             hover = "Assign this item to an extra equipment slot",
             options = {
-                { description = "No", data = false, hover = "Keep this item in the body slot." },
-                { description = "Yes", data = true, hover = "This item will be equipped in the apparel slot." }
+                { description = "No",  data = false, hover = "Keep this item in the body slot." },
+                { description = "Yes", data = true,  hover = "This item will be equipped in the apparel slot." }
             },
             default = true
         }
