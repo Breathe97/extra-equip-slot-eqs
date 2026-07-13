@@ -166,7 +166,7 @@ configuration_options = {
                 hover = "自动识别未知的模组物品并分配至服装栏。"
             }
         },
-        default = true
+        default = false
     },
     {
         name = "AUTO_SLOTS_NECK",
@@ -395,7 +395,7 @@ if not isZh then
                 { description = "No", data = false, hover = "You installed the mod but won't enable it?" },
                 { description = "Yes", data = true, hover = "Auto-assign unknown mod apparel to the apparel slot." }
             },
-            default = true
+            default = false
         },
         {
             name = "AUTO_SLOTS_NECK",
