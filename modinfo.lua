@@ -35,8 +35,8 @@ reign_of_giants_compatible = false -- 兼容巨人
 all_clients_require_mod = true     -- 客户端mod就false,服务端就true。
 
 -- 为mod指定自定义图标!
-icon_atlas = "assets/preview/preview.xml"
-icon = "assets/preview/preview.tex"
+icon_atlas = "assets/icon/icon.xml"
+icon = "icon.tex"
 
 server_filter_tags = { "refresh", "Krampus", "private" } -- 服务器标签可以不写
 
