@@ -739,25 +739,13 @@ local function RepairExtra()
 
             SetSymbol(item, 'swap_hat', 'swap_hat')
 
-            -- 必须同步设置子符号
             -- 启迪之冠渲染逻辑有些不一样
             if item.prefab == 'alterguardianhat' then
-                -- 当启迪之冠未激活才需要渲染
-                if GetSanityPercent() < 0.85 then
-                    player.AnimState:Show("HAT")    -- 显示帽子模型
-                else
-                    player.AnimState:Hide("HAT")    -- 隐藏帽子模型
+                -- 当启迪之冠已激活需要额外控制
+                if GetSanityPercent() >= 0.85 then
+                    player.AnimState:Hide("HAT") -- 隐藏帽子模型
                 end
-                player.AnimState:Hide("HAIR_HAT")   -- 隐藏"戴帽版"发型
-                player.AnimState:Show("HAIR_NOHAT") -- 显示完整发型
-                player.AnimState:Show("HAIR")       -- 显示头发基础层
-                return
             end
-
-            player.AnimState:Show("HAT")        -- 显示帽子模型
-            player.AnimState:Show("HAIR_HAT")   -- 显示"戴帽版"发型
-            player.AnimState:Hide("HAIR_NOHAT") -- 隐藏完整发型
-            player.AnimState:Hide("HAIR")       -- 隐藏头发基础层
         end
 
         -- 设置背包栏贴图
