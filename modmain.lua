@@ -106,20 +106,20 @@ local function InitSlot()
             -- 添加额外格子
             if self.addextraslots == nil then
                 self.addextraslots = 1
-                if GLOBAL.EQUIPSLOTS.HAT ~= nil then
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.HAT, "assets/equip_slot_hat/equip_slot_hat.xml", "equip_slot_hat.tex") -- 头饰栏图标
+                if EQUIPSLOTS_MAP.HAT ~= nil then
+                    self:AddEquipSlot(EQUIPSLOTS_MAP.HAT, "assets/equip_slot_hat/equip_slot_hat.xml", "equip_slot_hat.tex") -- 头饰栏图标
                 end
-                if GLOBAL.EQUIPSLOTS.BELLY ~= nil then
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BELLY, "assets/equip_slot_belly/equip_slot_belly.xml", "equip_slot_belly.tex") -- 服装栏图标
+                if EQUIPSLOTS_MAP.BELLY ~= nil then
+                    self:AddEquipSlot(EQUIPSLOTS_MAP.BELLY, "assets/equip_slot_belly/equip_slot_belly.xml", "equip_slot_belly.tex") -- 服装栏图标
                 end
-                if GLOBAL.EQUIPSLOTS.WAIST ~= nil then
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.WAIST, "assets/equip_slot_waist/equip_slot_waist.xml", "equip_slot_waist.tex") -- 腰包栏图标
+                if EQUIPSLOTS_MAP.WAIST ~= nil then
+                    self:AddEquipSlot(EQUIPSLOTS_MAP.WAIST, "assets/equip_slot_waist/equip_slot_waist.xml", "equip_slot_waist.tex") -- 腰包栏图标
                 end
-                if GLOBAL.EQUIPSLOTS.NECK ~= nil then
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.NECK, "assets/equip_slot_neck/equip_slot_neck.xml", "equip_slot_neck.tex") -- 护符栏图标
+                if EQUIPSLOTS_MAP.NECK ~= nil then
+                    self:AddEquipSlot(EQUIPSLOTS_MAP.NECK, "assets/equip_slot_neck/equip_slot_neck.xml", "equip_slot_neck.tex") -- 护符栏图标
                 end
-                if GLOBAL.EQUIPSLOTS.BACK ~= nil then
-                    self:AddEquipSlot(GLOBAL.EQUIPSLOTS.BACK, "assets/equip_slot_back/equip_slot_back.xml", "equip_slot_back.tex") -- 背包栏图标
+                if EQUIPSLOTS_MAP.BACK ~= nil then
+                    self:AddEquipSlot(EQUIPSLOTS_MAP.BACK, "assets/equip_slot_back/equip_slot_back.xml", "equip_slot_back.tex") -- 背包栏图标
                 end
             end
 
@@ -666,7 +666,6 @@ local function RepairExtra()
                 belly = nil,                -- 服装物品
                 neck = nil,                 -- 护符物品
                 back = nil,                 -- 背包物品
-                waist = nil,                -- 腰包物品
             }
 
             -- 护符合名映射表：item.prefab → torso_amulets 构建中的符号名
@@ -809,12 +808,6 @@ local function RepairExtra()
                         RefreshEquipOverrides('body')
                         return
                     end
-                    -- 腰包栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.WAIST then
-                        equipped_items.waist = data.item -- 记录当前物品
-                        RefreshEquipOverrides('body')
-                        return
-                    end
                     -- 护符栏
                     if data.eslot == GLOBAL.EQUIPSLOTS.NECK then
                         equipped_items.neck = data.item -- 记录当前物品
@@ -858,12 +851,6 @@ local function RepairExtra()
                     -- 服装栏
                     if data.eslot == GLOBAL.EQUIPSLOTS.BELLY then
                         equipped_items.belly = nil -- 移除当前物品
-                        RefreshEquipOverrides('body')
-                        return
-                    end
-                    -- 腰包栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.WAIST then
-                        equipped_items.waist = nil -- 移除当前物品
                         RefreshEquipOverrides('body')
                         return
                     end

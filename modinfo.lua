@@ -8,7 +8,7 @@ description = [[
 󰀜 其他模组的适配可以留言（物品的英文+中文+模组的名称）。
 
 󰀏 近期更新：
-2.2.4：优化人物整体渲染逻辑。
+2.2.4：优化人物整体渲染逻辑，强化兼容性。
 2.2.3：增加强制头盔栏物品。
 2.2.2：优化头饰栏渲染逻辑。
 2.2.1：优化头饰栏渲染逻辑。
@@ -35,8 +35,8 @@ reign_of_giants_compatible = false -- 兼容巨人
 all_clients_require_mod = true     -- 客户端mod就false,服务端就true。
 
 -- 为mod指定自定义图标!
-icon_atlas = "preview.xml"
-icon = "preview.tex"
+icon_atlas = "assets/preview/preview.xml"
+icon = "assets/preview/preview.tex"
 
 server_filter_tags = { "refresh", "Krampus", "private" } -- 服务器标签可以不写
 
