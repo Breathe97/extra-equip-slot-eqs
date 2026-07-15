@@ -178,7 +178,6 @@ local function InitSlot()
                 local waist_x = self.equip[GLOBAL.EQUIPSLOTS.WAIST]:GetPosition().x
                 local compass_y = self.integrated_arrow ~= nil and 80 or 40
                 self.hudcompass:SetPosition(waist_x, compass_y, 0)
-                self.hand_inv:SetPosition(waist_x, compass_y, 0)
             end
         end
 
@@ -557,7 +556,7 @@ local function RepairExtra()
                 end
 
                 -- 检查新增装备槽的打开容器
-                for _, eslot in ipairs({ GLOBAL.EQUIPSLOTS.BACK, GLOBAL.EQUIPSLOTS.BELLY, GLOBAL.EQUIPSLOTS.NECK, GLOBAL.EQUIPSLOTS.WAIST, GLOBAL.EQUIPSLOTS.HAT }) do
+                for _, eslot in ipairs({ GLOBAL.EQUIPSLOTS.HAT, GLOBAL.EQUIPSLOTS.BELLY, GLOBAL.EQUIPSLOTS.NECK, GLOBAL.EQUIPSLOTS.WAIST, GLOBAL.EQUIPSLOTS.BACK }) do
                     if eslot then
                         local item = self:GetEquippedItem(eslot)
                         if item and item.components.container and item.components.container:IsOpen() then
@@ -590,12 +589,13 @@ local function RepairExtra()
                 -- 按优先级顺序查找已打开的容器
                 -- 原版只检查 body 和 head，这里新增了 back、belly 和 neck
                 -- 优先级：BACK > BODY > HEAD > BELLY > NECK
-                return getOpenContainer(GLOBAL.EQUIPSLOTS.BACK)
+                return
+                    getOpenContainer(GLOBAL.EQUIPSLOTS.HEAD)
                     or getOpenContainer(GLOBAL.EQUIPSLOTS.BODY)
-                    or getOpenContainer(GLOBAL.EQUIPSLOTS.HEAD)
                     or getOpenContainer(GLOBAL.EQUIPSLOTS.BELLY)
                     or getOpenContainer(GLOBAL.EQUIPSLOTS.NECK)
                     or getOpenContainer(GLOBAL.EQUIPSLOTS.WAIST)
+                    or getOpenContainer(GLOBAL.EQUIPSLOTS.BACK)
             end
 
             -- 需要替换内部 GetOverflowContainer 引用的方法列表
