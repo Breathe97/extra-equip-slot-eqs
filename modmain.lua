@@ -556,7 +556,7 @@ local function RepairExtra()
                 end
 
                 -- 检查新增装备槽的打开容器
-                for _, eslot in ipairs({ GLOBAL.EQUIPSLOTS.HAT, GLOBAL.EQUIPSLOTS.BELLY, GLOBAL.EQUIPSLOTS.NECK, GLOBAL.EQUIPSLOTS.WAIST, GLOBAL.EQUIPSLOTS.BACK }) do
+                for _, eslot in ipairs({ GLOBAL.EQUIPSLOTS.BACK, GLOBAL.EQUIPSLOTS.BELLY, GLOBAL.EQUIPSLOTS.HAT, GLOBAL.EQUIPSLOTS.WAIST, GLOBAL.EQUIPSLOTS.NECK }) do
                     if eslot then
                         local item = self:GetEquippedItem(eslot)
                         if item and item.components.container and item.components.container:IsOpen() then
@@ -587,15 +587,14 @@ local function RepairExtra()
                 end
 
                 -- 按优先级顺序查找已打开的容器
-                -- 原版只检查 body 和 head，这里新增了 back、belly 和 neck
-                -- 优先级：BACK > BODY > HEAD > BELLY > NECK
                 return
-                    getOpenContainer(GLOBAL.EQUIPSLOTS.HEAD)
+                    getOpenContainer(GLOBAL.EQUIPSLOTS.BACK)
                     or getOpenContainer(GLOBAL.EQUIPSLOTS.BODY)
+                    or getOpenContainer(GLOBAL.EQUIPSLOTS.HEAD)
                     or getOpenContainer(GLOBAL.EQUIPSLOTS.BELLY)
-                    or getOpenContainer(GLOBAL.EQUIPSLOTS.NECK)
+                    or getOpenContainer(GLOBAL.EQUIPSLOTS.HAT)
                     or getOpenContainer(GLOBAL.EQUIPSLOTS.WAIST)
-                    or getOpenContainer(GLOBAL.EQUIPSLOTS.BACK)
+                    or getOpenContainer(GLOBAL.EQUIPSLOTS.NECK)
             end
 
             -- 需要替换内部 GetOverflowContainer 引用的方法列表
