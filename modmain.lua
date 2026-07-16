@@ -101,7 +101,7 @@ local function InitSlot()
         local Inv_Refresh_base = Inv.Refresh or nil
         local Inv_Rebuild_base = Inv.Rebuild or nil
 
-        function Inv:RebuildExtraSlots(self)
+        local function RebuildExtraSlots(self)
             -- See `scripts/widgets/inventorybar.lua:212-217`.
             -- 添加额外格子
             if self.addextraslots == nil then
@@ -185,14 +185,14 @@ local function InitSlot()
             if Inv_Rebuild_base then
                 Inv_Rebuild_base(self)
             end
-            Inv:RebuildExtraSlots(self)
+            RebuildExtraSlots(self)
         end
 
         function Inv:Refresh()
             if Inv_Refresh_base then
                 Inv_Refresh_base(self)
             end
-            Inv:RebuildExtraSlots(self)
+            RebuildExtraSlots(self)
         end
     end
     AddGlobalClassPostConstruct("widgets/inventorybar", "Inv", PostConstruct)
@@ -364,7 +364,7 @@ local function RepairExtra()
                             [math.random(#GLOBAL.STRINGS.HERMITCRAB_REFUSE_COAT)])
                     end
                 end
-                OnRefuseItem_Base(inst, giver, item)
+                OnRefuseItem_Base(inst1, giver, item)
             end
 
             -- 覆盖 `iscoat`.
@@ -899,11 +899,11 @@ local function HoverItemCode()
     AddClassPostConstruct("widgets/hoverer", function(self)
         local old_SetString = self.text.SetString
         self.text.SetString = function(text, str)
-            local target = TheInput:GetHUDEntityUnderMouse()
+            local target = GLOBAL.TheInput:GetHUDEntityUnderMouse()
             if target ~= nil then
                 target = target.widget ~= nil and target.widget.parent ~= nil and target.widget.parent.item
             else
-                target = TheInput:GetWorldEntityUnderMouse()
+                target = GLOBAL.TheInput:GetWorldEntityUnderMouse()
             end
             if target and target.entity ~= nil then
                 if target.prefab ~= nil then
