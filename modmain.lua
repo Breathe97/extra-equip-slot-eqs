@@ -159,21 +159,25 @@ local function InitSlot()
 
             -- 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
             if GLOBAL.EQUIPSLOTS.BACK ~= nil and num_equip > 3 and self.integrated_arrow then
-                local inv_x = self.inv[#self.inv]:GetPosition().x + W * 0.5 + INTERSEP     -- 装备栏起始坐标
-                local x = inv_x + W + SEP                                                  -- 背包栏原始x坐标
-                local new_x = self.equip[GLOBAL.EQUIPSLOTS.BACK]:GetPosition().x - W * 0.5 -- 背包栏新x坐标
-                local offset_x = new_x - x                                                 -- 偏移距离
+                local last_inv = self.inv[#self.inv]
+                local back_equip = self.equip[GLOBAL.EQUIPSLOTS.BACK]
+                if last_inv and back_equip then
+                    local inv_x = last_inv:GetPosition().x + W * 0.5 + INTERSEP -- 装备栏起始坐标
+                    local x = inv_x + W + SEP                                   -- 背包栏原始x坐标
+                    local new_x = back_equip:GetPosition().x - W * 0.5          -- 背包栏新x坐标
+                    local offset_x = new_x - x                                  -- 偏移距离
 
-                local old_tex_x = inv_x + 61                                               -- 箭头原始x坐标（+61是因为原版贴图就有便宜）
-                local tex_x = old_tex_x + (offset_x * 0.5)                                 -- 箭头新x坐标 （因为要缩放箭头 所以取一半）
+                    local old_tex_x = inv_x + 61                                -- 箭头原始x坐标（+61是因为原版贴图就有便宜）
+                    local tex_x = old_tex_x + (offset_x * 0.5)                  -- 箭头新x坐标 （因为要缩放箭头 所以取一半）
 
-                local tex_w = W + SEP + W * 0.5                                            -- 箭头原图宽度 = 1格子 + 1sep + 0.5格子
-                local new_tex_w = tex_w + offset_x                                         -- 箭头新宽度
+                    local tex_w = W + SEP + W * 0.5                             -- 箭头原图宽度 = 1格子 + 1sep + 0.5格子
+                    local new_tex_w = tex_w + offset_x                          -- 箭头新宽度
 
-                local scale_x = new_tex_w / tex_w                                          -- 箭头缩放倍率
+                    local scale_x = new_tex_w / tex_w                           -- 箭头缩放倍率
 
-                self.integrated_arrow:SetPosition(tex_x, 8)                                -- 设置x坐标
-                self.integrated_arrow:SetScale(scale_x, 1, 1)                              -- 设置缩放
+                    self.integrated_arrow:SetPosition(tex_x, 8)                 -- 设置x坐标
+                    self.integrated_arrow:SetScale(scale_x, 1, 1)               -- 设置缩放
+                end
             end
 
             -- 指南针 HUD 位置修正：将指南针 HUD 移至实际栏位上方
