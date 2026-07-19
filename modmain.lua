@@ -502,6 +502,20 @@ local function RepairExtra()
                         end
                     end)
                 end)
+
+                -- 修复吴迪（Woodie）变身结束后背包不重新打开的问题
+                -- 吴迪从野兽形态变回人时（wereness 归零或手动解除），
+                -- 引擎会关闭所有容器，但不会自动重开背包
+                inst:ListenForEvent("transform_person", function()
+                    inst:DoTaskInTime(0, function()
+                        local backitem = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                        if backitem and backitem.components.container then
+                            if not backitem.components.container:IsOpen() then
+                                backitem.components.container:Open(inst)
+                            end
+                        end
+                    end)
+                end)
             end
         end)
     end
