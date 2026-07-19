@@ -122,10 +122,14 @@ local function InitSlot()
                 end
             end
 
-            local W = 68                                                           -- 格子宽度
-            local SEP = 12                                                         -- 格子间隙
-            local INTERSEP = 28                                                    -- 组格子间隙 5个一组
-            local inv_x = self.inv[#self.inv]:GetPosition().x + W * 0.5 + INTERSEP -- 装备栏起始坐标
+            -- 防御：LIMBO状态下 inv widget 可能未就绪
+            if not self.inv or #self.inv == 0 then
+                return
+            end
+
+            local W = 68        -- 格子宽度
+            local SEP = 12      -- 格子间隙
+            local INTERSEP = 28 -- 组格子间隙 5个一组
 
             -- 计算原始宽度
             local function CalcTotalWidth(num_slots, num_equip, num_buttons)
@@ -155,6 +159,7 @@ local function InitSlot()
 
             -- 对融合式背包栏箭头进行调整 -- See `scripts/widgets/inventorybar.lua:313`.
             if GLOBAL.EQUIPSLOTS.BACK ~= nil and num_equip > 3 and self.integrated_arrow then
+                local inv_x = self.inv[#self.inv]:GetPosition().x + W * 0.5 + INTERSEP     -- 装备栏起始坐标
                 local x = inv_x + W + SEP                                                  -- 背包栏原始x坐标
                 local new_x = self.equip[GLOBAL.EQUIPSLOTS.BACK]:GetPosition().x - W * 0.5 -- 背包栏新x坐标
                 local offset_x = new_x - x                                                 -- 偏移距离
