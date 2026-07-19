@@ -9,7 +9,6 @@ local SLOTS_HAT = GetModConfigData("SLOTS_HAT")
 local AUTO_SLOTS_BELLY = GetModConfigData("AUTO_SLOTS_BELLY")
 local AUTO_SLOTS_NECK = GetModConfigData("AUTO_SLOTS_NECK")
 local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
-local AUTO_SLOTS_HAT = GetModConfigData("AUTO_SLOTS_HAT")
 
 local HOVER_ITEM_CODE = GetModConfigData("HOVER_ITEM_CODE")
 local MOD_HYCS_YHFF = GetModConfigData("MOD_HYCS_YHFF")
@@ -208,12 +207,25 @@ local function InitPrefab()
         local equipslot = inst.components.equippable.equipslot -- 物品原所属栏
         local prefab = inst.prefab                             -- 物品名称
 
+
+
         -- 手持
         if equipslot == 'hands' then
             -- 检查是否属于腰包栏
             if GLOBAL.EQUIPSLOTS.WAIST and SYMBOL_WAIST[prefab] then
                 inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.WAIST
                 return
+            end
+            -- 智能识别暖石类物品（适配其他模组）
+            if GLOBAL.EQUIPSLOTS.WAIST and AUTO_SLOTS_WAIST then
+                -- 优先用 heatrock 标签（精准）
+                -- 兜底用 heater 组件（适配未加标签的模组暖石）
+                local is_heatrock = inst:HasTag("heatrock")
+                    or (inst.components.heater ~= nil and inst.components.equippable ~= nil)
+                if is_heatrock then
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.WAIST
+                    return
+                end
             end
         end
 
@@ -225,15 +237,6 @@ local function InitPrefab()
             if GLOBAL.EQUIPSLOTS.HAT and SYMBOL_HAT[prefab] then
                 inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.HAT -- 分配到头饰栏
                 return
-            end
-
-            -- 当开启自动识别头饰栏（头部物品且无护甲组件）
-            if GLOBAL.EQUIPSLOTS.HAT and AUTO_SLOTS_HAT then
-                local matched = equipslot == 'head' and inst.components.armor == nil -- 头部物品且无护甲
-                if matched then
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.HAT     -- 分配到头饰栏
-                    return
-                end
             end
         end
 
@@ -699,7 +702,7 @@ local function RepairExtra()
                 return player.replica.sanity and player.replica.sanity:GetPercent() or 1
             end
 
-            -- 设置贴图
+            -- 设置身体贴图
             local function SetSymbol(item, oldsymbol, newsymbol)
                 local skin_build = item:GetSkinBuild()                                    -- 皮肤贴图
                 if skin_build and skin_build ~= '' then                                   -- 如果皮肤贴图存在

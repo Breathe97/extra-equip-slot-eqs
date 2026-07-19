@@ -204,8 +204,6 @@ configuration_options = {
         },
         default = true
     },
-
-
     {
         name = "",
         label = "其他配置 (推荐默认)",
