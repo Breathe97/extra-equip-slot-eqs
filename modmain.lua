@@ -262,6 +262,8 @@ local function InitPrefab()
                 return
             end
 
+            if inst.components.armor ~= nil then return end -- 其他有护甲属性的物品不进行自动分配
+
             -- 当开启自动识别护符栏
             if GLOBAL.EQUIPSLOTS.NECK and AUTO_SLOTS_NECK then
                 local matched = inst:HasTag("amulet")                             -- 是否有护符标签
@@ -273,18 +275,18 @@ local function InitPrefab()
 
             -- 当开启自动识别背包栏
             if GLOBAL.EQUIPSLOTS.BACK and AUTO_SLOTS_BACK then
-                local matched = inst.components.armor == nil and (inst:HasTag("backpack") or inst:HasTag("candybag")) -- 没有护甲属性 并且有背包、糖果袋标签 分配到背包栏
+                local matched = (inst:HasTag("backpack") or inst:HasTag("candybag")) -- 有背包、糖果袋标签 分配到背包栏
                 if matched then
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK                                     -- 分配到背包栏
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK    -- 分配到背包栏
                     return
                 end
             end
 
             -- 当开启自动识别服装栏
             if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
-                local matched = inst.components.armor == nil or inst.components.waterproofer ~= nil or inst.components.insulator ~= nil or inst.components.rainimmunity ~= nil -- 没有护甲属性 有服装属性（防水/保暖/防雨）
+                local matched = inst.components.waterproofer ~= nil or inst.components.insulator ~= nil or inst.components.rainimmunity ~= nil -- 有服装属性（防水/保暖/防雨）
                 if matched then
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY                                                                                            -- 分配到服装栏
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY                                                             -- 分配到服装栏
                     return
                 end
             end
