@@ -31,7 +31,6 @@ return {
     veneto_yifu = "veneto_yifu",               -- 战舰少女维内托-小时候的衣服
     dress_sea = "dress_sea",                   -- 希儿-幻海梦蝶
     seele_swimsuit = "seele_swimsuit",         -- 希儿-夏雪铃兰
-    lg_fufeng = "lg_fufeng",                   -- 海洋传说-雨花·扶风
     krm_uniform = "krm_uniform",               -- 狂三-校服
     to_school = "to_school",                   -- 鸢一折纸-校服
     woolen_sweater = "woolen_sweater",         -- 山海秘藏-羊毛衫
@@ -41,7 +40,6 @@ return {
     armor_windbreaker = "armor_windbreaker",   -- 岛屿冒险-防风衣
     blubbersuit = "blubbersuit",               -- 岛屿冒险-鲸脂套装
     armor_snakeskin = "armor_snakeskin",       -- 岛屿冒险-蛇皮夹克
-    myxl_dreambook = "myxl_dreambook",         -- 璇儿-遗梦芸典
     m_scarf = "m_scarf",                       -- M.louis-黑围巾
     third_eye = "third_eye",                   -- 古明地恋-第三只眼
     third_eye2 = "third_eye2",                 -- 古明地恋-增幅第三只眼

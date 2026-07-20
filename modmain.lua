@@ -11,10 +11,8 @@ local AUTO_SLOTS_NECK = GetModConfigData("AUTO_SLOTS_NECK")
 local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
 
 local HOVER_ITEM_CODE = GetModConfigData("HOVER_ITEM_CODE")
-local MOD_HYCS_YHFF = GetModConfigData("MOD_HYCS_YHFF")
 local MOD_YBTX_BELLY = GetModConfigData("MOD_YBTX_BELLY")
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
-local MOD_XE_YMYD = GetModConfigData("MOD_XE_YMYD")
 
 local SYMBOL_HAT = require("symbol_hat")                 -- 定义头饰栏物品
 local SYMBOL_BELLY = require("symbol_belly")             -- 定义服装栏物品
@@ -30,13 +28,6 @@ local FORCE_SYMBOL_BELLY = require("force_symbol_belly") -- 定义强制服装�
 
 -- 校准 symbol表 根据设置中生成最终的物品表 后续再根据该表进行装备栏的分配
 local function CalibrationSymBol()
-    -- 移除特殊设置项的物品识别
-    if not MOD_HYCS_YHFF then
-        SYMBOL_BELLY['lg_fufeng'] = nil
-    end
-    if not MOD_XE_YMYD then
-        SYMBOL_BELLY['myxl_dreambook'] = nil
-    end
     -- 如果不开启强制服装栏 清空 FORCE_SYMBOL_BELLY 表
     if MOD_YBTX_BELLY == false then
         FORCE_SYMBOL_BELLY['trunkvest_summer'] = nil
@@ -46,7 +37,7 @@ local function CalibrationSymBol()
         FORCE_SYMBOL_BELLY['raincoat'] = nil
     end
     -- 这里就是取true 调整的是 FORCE_SYMBOL_BODY 表
-    if MOD_LJ_ZGF then
+    if MOD_LJ_ZGF == false then
         FORCE_SYMBOL_BODY['siving_suit_gold'] = nil
     end
 end
@@ -216,7 +207,22 @@ local function InitPrefab()
         local equipslot = inst.components.equippable.equipslot -- 物品原所属栏
         local prefab = inst.prefab                             -- 物品名称
 
+        -- 棱镜-皇帝的皇冠没有添加 open_top_hat 标签
+        if prefab == 'theemperorscrown' and not inst:HasTag("open_top_hat") then
+            inst:AddTag("open_top_hat")
+        end
 
+        -- 物品需要强制保留在头盔栏
+        if FORCE_SYMBOL_HEAD[prefab] then
+            inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.HEAD -- 分配到头盔栏
+            return
+        end
+
+        -- 物品需要强制保留在身体栏
+        if FORCE_SYMBOL_BODY[prefab] then
+            inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BODY -- 分配到身体栏
+            return
+        end
 
         -- 手持
         if equipslot == 'hands' then
@@ -225,23 +231,10 @@ local function InitPrefab()
                 inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.WAIST
                 return
             end
-            -- 智能识别暖石类物品（适配其他模组）
-            if GLOBAL.EQUIPSLOTS.WAIST and AUTO_SLOTS_WAIST then
-                -- 优先用 heatrock 标签（精准）
-                -- 兜底用 heater 组件（适配未加标签的模组暖石）
-                local is_heatrock = inst:HasTag("heatrock")
-                    or (inst.components.heater ~= nil and inst.components.equippable ~= nil)
-                if is_heatrock then
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.WAIST
-                    return
-                end
-            end
         end
 
         -- 头部
         if equipslot == 'head' then
-            if FORCE_SYMBOL_HEAD[prefab] then return end -- 物品需要强制保留在头盔栏
-
             -- 检查是否属于头饰栏
             if GLOBAL.EQUIPSLOTS.HAT and SYMBOL_HAT[prefab] then
                 inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.HAT -- 分配到头饰栏
@@ -251,8 +244,6 @@ local function InitPrefab()
 
         -- 身体
         if equipslot == 'body' then
-            if FORCE_SYMBOL_BODY[prefab] then return end -- 物品需要强制保留在身体栏
-
             -- 检查是否属于护符栏
             if GLOBAL.EQUIPSLOTS.NECK and SYMBOL_NECK[prefab] then
                 inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK -- 分配到护符栏
@@ -282,9 +273,9 @@ local function InitPrefab()
 
             -- 当开启自动识别背包栏
             if GLOBAL.EQUIPSLOTS.BACK and AUTO_SLOTS_BACK then
-                local matched = inst:HasTag("backpack") or inst:HasTag("candybag") -- 是否有背包、糖果袋标签
+                local matched = inst.components.armor == nil and (inst:HasTag("backpack") or inst:HasTag("candybag")) -- 没有护甲属性 并且有背包、糖果袋标签 分配到背包栏
                 if matched then
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK  -- 分配到背包栏
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK                                     -- 分配到背包栏
                     return
                 end
             end
@@ -578,7 +569,11 @@ local function RepairExtra()
                 -- 先尝试原版逻辑（仅 BODY 槽）
                 local container = _GetOverflowContainer(self)
                 if container then
-                    return container
+                    -- 原版容器还有空位，直接用它
+                    if not container:IsFull() then
+                        return container
+                    end
+                    -- 原版容器满了，不返回，继续检查新槽
                 end
 
                 -- 检查新增装备槽的打开容器
