@@ -4,5 +4,5 @@ return {
     trunkvest_winter = "trunkvest_winter", -- 松软背心
     reflectivevest = "reflectivevest",     -- 清凉夏装
     hawaiianshirt = "hawaiianshirt",       -- 花衬衫
-    raincoat = "raincoat"                  -- 雨衣
+    raincoat = "raincoat",                 -- 雨衣
 }

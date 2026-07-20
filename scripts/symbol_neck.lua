@@ -30,5 +30,5 @@ return {
     fixer_medal_crimson = "fixer_medal_crimson",         -- 边狱巴士-收尾人勋章·猩红凝视
     fixer_medal_indigo = "fixer_medal_indigo",           -- 边狱巴士-收尾人勋章·靛蓝老人
     fixer_medal_siegfried = "fixer_medal_siegfried",     -- 边狱巴士-收尾人勋章·齐格飞
-    fixer_medal_winter = "fixer_medal_winter"            -- 边狱巴士-收尾人勋章·冬红布袋
+    fixer_medal_winter = "fixer_medal_winter",           -- 边狱巴士-收尾人勋章·冬红布袋
 }

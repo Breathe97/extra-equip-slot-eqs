@@ -282,9 +282,9 @@ local function InitPrefab()
 
             -- 当开启自动识别服装栏
             if GLOBAL.EQUIPSLOTS.BELLY and AUTO_SLOTS_BELLY then
-                local matched = inst.components.waterproofer ~= nil or inst.components.insulator ~= nil or inst.components.rainimmunity ~= nil -- 是否有服装属性（防水/保暖/防雨）
+                local matched = inst.components.armor == nil or inst.components.waterproofer ~= nil or inst.components.insulator ~= nil or inst.components.rainimmunity ~= nil -- 没有护甲属性 有服装属性（防水/保暖/防雨）
                 if matched then
-                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY                                                             -- 分配到服装栏
+                    inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY                                                                                            -- 分配到服装栏
                     return
                 end
             end

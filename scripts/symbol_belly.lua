@@ -50,5 +50,5 @@ return {
     sdf_victorian_suit = "sdf_victorian_suit", -- Medievil Reanimated-衣服
     zhifu = "zhifu",                           -- 战舰少女补给包-秋冬制服
     dante_cloth = "dante_cloth",               -- 边狱巴士-但丁的外套
-    sinner_cloth = "sinner_cloth"              -- 边狱巴士-罪人外套
+    sinner_cloth = "sinner_cloth",             -- 边狱巴士-罪人外套
 }

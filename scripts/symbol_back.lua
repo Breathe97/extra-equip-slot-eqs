@@ -16,5 +16,5 @@ return {
     thatchpack = "thatchpack",         -- 永不妥协-茅草包
     seasack = "seasack",               -- 永不妥协-海带背包
     piratepack = "piratepack",         -- 永不妥协-海盗箱子
-    sludge_sack = "sludge_sack"        -- 永不妥协-海泥包
+    sludge_sack = "sludge_sack",       -- 永不妥协-海泥包
 }
