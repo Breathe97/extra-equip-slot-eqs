@@ -730,6 +730,10 @@ local function RepairExtra()
                 if item.prefab == 'onemanband' then
                     player.AnimState:OverrideSymbol(oldsymbol, build, 'swap_body_tall')
                 end
+                -- 棱镜靠背熊的 swap build 和物品 build 不同名
+                if item.prefab == 'backcub' then
+                    player.AnimState:OverrideSymbol(oldsymbol, 'swap_backcub', 'swap_body')
+                end
             end
 
             -- 设置头部贴图
@@ -784,7 +788,7 @@ local function RepairExtra()
                 SetSymbol(item, 'swap_body_tall', 'swap_body')
             end
 
-            -- 将swap_body让给背包栏，然后将其他身体贴图渲染到swap_body_tall，让将层级设置为swap_body > swap_body_tall
+            -- 将swap_body让给背包栏，然后将其他身体贴图渲染到swap_body_tall，将层级设置为swap_body > swap_body_tall
             local function RefreshEquipOverrides(symbol)
                 -- 渲染头部
                 if GLOBAL.EQUIPSLOTS.HAT and symbol == 'head' then
