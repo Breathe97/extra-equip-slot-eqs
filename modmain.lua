@@ -212,6 +212,12 @@ local function InitPrefab()
             inst:AddTag("open_top_hat")
         end
 
+        -- 可搬运重物只能分配到背包栏不然贴图就会有问题
+        if GLOBAL.EQUIPSLOTS.BACK and inst:HasTag("heavy") then
+            inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK -- 分配到背包栏
+            return
+        end
+
         -- 物品需要强制保留在头盔栏
         if FORCE_SYMBOL_HEAD[prefab] then
             inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.HEAD -- 分配到头盔栏
@@ -250,7 +256,7 @@ local function InitPrefab()
                 return
             end
 
-            -- 检查是否属于背包栏
+            -- 检查是否属于背包栏（一些重物：雕像、沉底宝箱 只能分配到背包栏）
             if GLOBAL.EQUIPSLOTS.BACK and SYMBOL_BACK[prefab] then
                 inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BACK -- 分配到背包栏
                 return
@@ -726,11 +732,17 @@ local function RepairExtra()
                     player.AnimState:OverrideSymbol(oldsymbol, "torso_amulets", amulet_symbol)
                 end
 
+                -- 沉底宝箱特殊处理：使用 swap 构建而不是地面构建
+                if item.prefab == 'sunkenchest' then
+                    player.AnimState:OverrideSymbol(oldsymbol, 'swap_sunken_treasurechest', 'swap_body')
+                end
+
                 -- 独奏乐器特殊处理：onemanband 使用 "swap_body_tall" 作为源符号名，而不是常规的 "swap_body"
                 if item.prefab == 'onemanband' then
                     player.AnimState:OverrideSymbol(oldsymbol, build, 'swap_body_tall')
                 end
-                -- 棱镜靠背熊的 swap build 和物品 build 不同名
+
+                -- 棱镜：靠背熊的 swap build 和物品 build 不同名
                 if item.prefab == 'backcub' then
                     player.AnimState:OverrideSymbol(oldsymbol, 'swap_backcub', 'swap_body')
                 end
@@ -796,14 +808,15 @@ local function RepairExtra()
                 end
                 -- 渲染身体/背包
                 if GLOBAL.EQUIPSLOTS.BODY and symbol == 'body' then
+                    player.AnimState:ClearOverrideSymbol("swap_body")
                     player.AnimState:ClearOverrideSymbol("swap_body_tall")
                     SetBackSymbol()
                     SetBodySymbol()
-                    player.AnimState:SetSymbolExchange("swap_body_tall", "swap_body")
+                    player.AnimState:SetSymbolExchange("swap_body_tall", "swap_body") -- 设置层级
                 end
             end
 
-            local function OnEquip(_, data)
+            local function Equip(_, data)
                 if not data or not data.item then return end
                 -- 如果开启帽子栏
                 if GLOBAL.EQUIPSLOTS.HAT then
@@ -849,7 +862,7 @@ local function RepairExtra()
                 end
             end
 
-            local function OnUnequip(_, data)
+            local function Unequip(_, data)
                 if not data then return end
                 -- 如果开启帽子栏
                 if GLOBAL.EQUIPSLOTS.HAT then
@@ -895,8 +908,8 @@ local function RepairExtra()
                 end
             end
 
-            player:ListenForEvent("equip", OnEquip)     -- 装备
-            player:ListenForEvent("unequip", OnUnequip) -- 卸载
+            player:ListenForEvent("equip", Equip)     -- 装备
+            player:ListenForEvent("unequip", Unequip) -- 卸载
         end)
     end
 end
