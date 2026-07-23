@@ -1,7 +1,7 @@
 -- 定义护符栏物品
 return {
     -- 原版物品
-    amulet = "amulet",             -- 红色护符
+    amulet = "redamulet",          -- 红色护符
     blueamulet = "blueamulet",     -- 蓝色护符
     purpleamulet = "purpleamulet", -- 紫色护符
     orangeamulet = "orangeamulet", -- 橙色护符
