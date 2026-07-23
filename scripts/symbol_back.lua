@@ -9,7 +9,6 @@ return {
     seedpouch = true,    -- 种子袋
     spicepack = true,    -- 厨师袋
     onemanband = true,   -- 独奏乐器
-    sunkenchest = true,  -- 沉底宝箱
 
     -- 模组物品
     mone_seasack = true,   -- 更多物品-海上麻袋
