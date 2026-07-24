@@ -227,6 +227,12 @@ local function InitPrefab()
             return
         end
 
+        -- 物品需要强制保留在服装栏
+        if GLOBAL.EQUIPSLOTS.BELLY and FORCE_SYMBOL_BELLY[prefab] then
+            inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
+            return
+        end
+
         -- 手持
         if equipslot == 'hands' then
             -- 检查是否属于腰包栏
@@ -695,10 +701,11 @@ local function RepairExtra()
                 end
 
                 local prefab = item.prefab
-                -- 强制纠正 FORCE_SYMBOL_BELLY 物品的槽位
-                if GLOBAL.EQUIPSLOTS.BELLY and FORCE_SYMBOL_BELLY[prefab] then
-                    item.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
-                end
+
+                -- -- 强制纠正 FORCE_SYMBOL_BELLY 物品的槽位
+                -- if GLOBAL.EQUIPSLOTS.BELLY and FORCE_SYMBOL_BELLY[prefab] then
+                --     item.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
+                -- end
 
                 local owner = self.inst
 
