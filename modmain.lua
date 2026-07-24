@@ -689,12 +689,14 @@ local function RepairExtra()
     if GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.HAT then
         local items_anim_symbols = {} -- 记录物品的贴图数据 item.prefab → {slot, skin_build, symbol, item_guid, sym_build}
 
-        -- 劫持 inventory:Equip()
+        -- 劫持原版贴图渲染收集渲染数据
         AddComponentPostInit("inventory", function(comp)
-            if not GLOBAL.TheWorld.ismastersim then return end
+            if not IsServer then return end -- 客户端不执行
 
             local Equip_orig = comp.Equip
+            local Unequip_orig = comp.Unequip
 
+            -- 装备物品
             function comp.Equip(self, item, ...)
                 if not (item and item.components.equippable) then
                     return Equip_orig(self, item, ...)
@@ -729,6 +731,16 @@ local function RepairExtra()
                 local result = Equip_orig(self, item, ...)
                 owner.AnimState.OverrideItemSkinSymbol = OverrideItemSkinSymbol_orig
                 return result
+            end
+
+            -- 卸下物品
+            function comp.Unequip(self, eslot, ...)
+                -- 卸下时清理该物品的贴图缓存
+                local item = self:GetEquippedItem(eslot)
+                if item and item.GUID then
+                    items_anim_symbols[item.GUID] = nil
+                end
+                return Unequip_orig(self, eslot, ...)
             end
         end)
 
