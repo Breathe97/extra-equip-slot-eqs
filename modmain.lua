@@ -708,11 +708,6 @@ local function RepairExtra()
                     return Equip_orig(self, item, ...)
                 end
 
-                -- 光谱背包让他按原来的逻辑走
-                if isSpectralBackpack(item) then
-                    return Equip_orig(self, item, ...)
-                end
-
                 local slot = item.components.equippable.equipslot
                 if slot ~= GLOBAL.EQUIPSLOTS.BACK then
                     return Equip_orig(self, item, ...)
@@ -721,6 +716,11 @@ local function RepairExtra()
                 local owner = self.inst
 
                 if not (owner and owner.AnimState) then
+                    return Equip_orig(self, item, ...)
+                end
+
+                -- 光谱背包让他按原来的逻辑走
+                if isSpectralBackpack(item) then
                     return Equip_orig(self, item, ...)
                 end
 
