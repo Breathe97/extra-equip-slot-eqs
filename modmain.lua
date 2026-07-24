@@ -14,15 +14,18 @@ local HOVER_ITEM_CODE = GetModConfigData("HOVER_ITEM_CODE")
 local MOD_YBTX_BELLY = GetModConfigData("MOD_YBTX_BELLY")
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
 
-local SYMBOL_HAT = require("symbol_hat")                 -- 定义头饰栏物品
-local SYMBOL_BELLY = require("symbol_belly")             -- 定义服装栏物品
-local SYMBOL_WAIST = require("symbol_waist")             -- 定义腰包栏物品
-local SYMBOL_NECK = require("symbol_neck")               -- 定义护符栏物品
-local SYMBOL_BACK = require("symbol_back")               -- 定义背包栏物品
+local SYMBOL_HAT = require("symbol_hat")                   -- 定义头饰栏物品
+local SYMBOL_BELLY = require("symbol_belly")               -- 定义服装栏物品
+local SYMBOL_WAIST = require("symbol_waist")               -- 定义腰包栏物品
+local SYMBOL_NECK = require("symbol_neck")                 -- 定义护符栏物品
+local SYMBOL_BACK = require("symbol_back")                 -- 定义背包栏物品
 
-local FORCE_SYMBOL_HEAD = require("force_symbol_head")   -- 定义强制头盔栏物品
-local FORCE_SYMBOL_BODY = require("force_symbol_body")   -- 定义强制身体栏物品
-local FORCE_SYMBOL_BELLY = require("force_symbol_belly") -- 定义强制服装栏物品
+local SYMBOL_OPEN_TOP_HAT = require("symbol_open_top_hat") -- 需要添加露顶标签的物品
+
+local FORCE_SYMBOL_HEAD = require("force_symbol_head")     -- 定义强制头盔栏物品
+local FORCE_SYMBOL_BODY = require("force_symbol_body")     -- 定义强制身体栏物品
+local FORCE_SYMBOL_BELLY = require("force_symbol_belly")   -- 定义强制服装栏物品
+
 
 -- player.components.talker:Say("prefab: " .. item.prefab) -- 调试用
 
@@ -207,8 +210,8 @@ local function InitPrefab()
         local equipslot = inst.components.equippable.equipslot -- 物品原所属栏
         local prefab = inst.prefab                             -- 物品名称
 
-        -- 棱镜-皇帝的皇冠没有添加 open_top_hat 标签
-        if prefab == 'theemperorscrown' and not inst:HasTag("open_top_hat") then
+        -- 一些物品没有添加 open_top_hat 标签
+        if SYMBOL_OPEN_TOP_HAT[prefab] and not inst:HasTag("open_top_hat") then
             inst:AddTag("open_top_hat")
         end
 
@@ -678,27 +681,67 @@ local function RepairExtra()
 
     -- 开启背包栏或帽子栏需要重写贴图渲染逻辑
     if GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.HAT then
+        local items_anim_symbols = {} -- 记录物品的贴图数据 item.prefab → {slot, skin_build, symbol, item_guid, sym_build}
+
+        -- 劫持 inventory:Equip()
+        AddComponentPostInit("inventory", function(comp)
+            if not GLOBAL.TheWorld.ismastersim then return end
+
+            local Equip_orig = comp.Equip
+
+            function comp.Equip(self, item, ...)
+                if not (item and item.components.equippable) then
+                    return Equip_orig(self, item, ...)
+                end
+
+                local prefab = item.prefab
+                -- 强制纠正 FORCE_SYMBOL_BELLY 物品的槽位
+                if GLOBAL.EQUIPSLOTS.BELLY and FORCE_SYMBOL_BELLY[prefab] then
+                    item.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
+                end
+
+                local owner = self.inst
+
+                if not (owner and owner.AnimState) then
+                    return Equip_orig(self, item, ...)
+                end
+
+                local AnimState_orig = owner.AnimState
+
+                local OverrideItemSkinSymbol_orig = owner.AnimState.OverrideItemSkinSymbol -- 游戏贴图渲染
+
+                -- 拦截内部渲染逻辑
+                owner.AnimState.OverrideItemSkinSymbol = function(_, slot, skin_build, symbol, item_guid, sym_build)
+                    -- 记录部分物品的渲染参数
+                    if slot == "swap_body" or slot == "swap_body_tall" or slot == "swap_hat" then
+                        items_anim_symbols[item_guid] = { slot, skin_build, symbol, item_guid, sym_build }
+                    end
+                    AnimState_orig.OverrideItemSkinSymbol(AnimState_orig, slot, skin_build, symbol, item_guid, sym_build)
+                end
+
+                local result = Equip_orig(self, item, ...)
+                owner.AnimState.OverrideItemSkinSymbol = OverrideItemSkinSymbol_orig
+                return result
+            end
+        end)
+
+
         -- 重写贴图渲染逻辑
         AddPlayerPostInit(function(player)
             if not IsServer then return end -- 客户端不执行
-            local equipped_items = {
-                head = nil,                 -- 头盔物品
-                hat = nil,                  -- 帽子物品
-                body = nil,                 -- 护甲物品
-                belly = nil,                -- 服装物品
-                neck = nil,                 -- 护符物品
-                back = nil,                 -- 背包物品
-            }
+            local inv = player.replica.inventory
+            if not inv then return end
 
-            -- 护符合名映射表：item.prefab → torso_amulets 构建中的符号名
-            local AMULET_SYMBOL_MAP = {
-                amulet = "redamulet",
-                blueamulet = "blueamulet",
-                purpleamulet = "purpleamulet",
-                orangeamulet = "orangeamulet",
-                yellowamulet = "yellowamulet",
-                greenamulet = "greenamulet",
-            }
+            -- 把物品渲染到指定的渲染槽（swap_hat / swap_body / swap_body_tall）
+            local function SetSymbol(render_slot, item)
+                if item == nil then return end
+                local guid = item.GUID
+                if not guid then return end
+                local data = items_anim_symbols[guid]                                                              -- 按 GUID 查找
+                if data == nil then return end
+                local slot, skin_build, symbol, item_guid, sym_build = data[1], data[2], data[3], data[4], data[5] -- 读取之前村的 build、symbol
+                player.AnimState:OverrideItemSkinSymbol(render_slot, skin_build, symbol, item_guid, sym_build)
+            end
 
             -- 获取玩家理智
             local function GetSanityPercent()
@@ -708,49 +751,11 @@ local function RepairExtra()
                 return player.replica.sanity and player.replica.sanity:GetPercent() or 1
             end
 
-            -- 设置身体贴图
-            local function SetSymbol(item, oldsymbol, newsymbol)
-                local skin_build = item:GetSkinBuild()                                    -- 皮肤贴图
-                if skin_build and skin_build ~= '' then                                   -- 如果皮肤贴图存在
-                    player.AnimState:OverrideSkinSymbol(oldsymbol, skin_build, newsymbol) -- 设置皮肤物品贴图
-                end
-
-                local build = item.AnimState:GetBuild()                          -- 原版物品贴图
-                if build then                                                    -- 如果原版贴图存在
-                    player.AnimState:OverrideSymbol(oldsymbol, build, newsymbol) -- 设置原版物品贴图
-                end
-
-                -- 沉底宝箱特殊处理：使用 swap 构建而不是地面构建
-                if item.prefab == 'sunkenchest' then
-                    player.AnimState:OverrideSymbol("swap_body_tall", 'swap_sunken_treasurechest', 'swap_body')
-                end
-
-                -- 重物需要占用 swap_body_tall
-                if item:HasTag("heavy") then
-                    player.AnimState:OverrideSymbol("swap_body_tall", build, 'swap_body')
-                end
-
-                -- 护符特殊处理：护符使用双构建系统
-                local amulet_symbol = AMULET_SYMBOL_MAP[item.prefab]
-                if amulet_symbol then
-                    player.AnimState:OverrideSymbol(oldsymbol, "torso_amulets", amulet_symbol)
-                end
-
-                -- 独奏乐器特殊处理：onemanband 使用 "swap_body_tall" 作为源符号名，而不是常规的 "swap_body"
-                if item.prefab == 'onemanband' then
-                    player.AnimState:OverrideSymbol(oldsymbol, build, 'swap_body_tall')
-                end
-
-                -- 棱镜靠背熊的 swap build 和物品 build 不同名
-                if item.prefab == 'backcub' then
-                    player.AnimState:OverrideSymbol(oldsymbol, 'swap_backcub', 'swap_body')
-                end
-            end
-
             -- 设置头部贴图
             local function SetHeadSymbol()
-                local item = equipped_items.head or equipped_items.hat -- 头部物品
+                local item = inv.GetEquippedItem(inv, GLOBAL.EQUIPSLOTS.HEAD) or inv.GetEquippedItem(inv, GLOBAL.EQUIPSLOTS.HAT) -- 获取已装备的物品
                 if item == nil then return end
+
                 -- 重置人物形象为默认
                 player.AnimState:Hide("HAT")        -- 隐藏帽子模型
                 player.AnimState:Hide("HAIR_HAT")   -- 隐藏"戴帽版"发型
@@ -766,7 +771,7 @@ local function RepairExtra()
                     -- 未激活，继续执行 SetSymbol 和 Show/Hide
                 end
 
-                SetSymbol(item, 'swap_hat', 'swap_hat')
+                SetSymbol('swap_hat', item)
 
                 if item:HasTag("open_top_hat") then
                     -- 露顶帽子 — 显示完整发型，隐藏"戴帽版"
@@ -783,131 +788,46 @@ local function RepairExtra()
                 end
             end
 
-            -- 设置背包栏贴图
-            local function SetBackSymbol()
-                local item = equipped_items.back -- 背包栏物品
-                if item == nil then return end
-                SetSymbol(item, 'swap_body_tall', 'swap_body')
-            end
-
             -- 设置身体栏贴图
             local function SetBodySymbol()
-                local item = equipped_items.body or equipped_items.belly or equipped_items.neck -- 不渲染指南针
-                if item:HasTag("heavy") then                                                    -- 跳过重物
-                    item = equipped_items.belly or equipped_items.neck                          -- 不渲染指南针
-                end
+                local item = inv.GetEquippedItem(inv, GLOBAL.EQUIPSLOTS.BODY) or inv.GetEquippedItem(inv, GLOBAL.EQUIPSLOTS.BELLY) or inv.GetEquippedItem(inv, GLOBAL.EQUIPSLOTS.NECK) -- 获取已装备的物品
                 if item == nil then return end
-                SetSymbol(item, 'swap_body', 'swap_body')
+                SetSymbol('swap_body', item)
             end
 
-            local function RefreshEquipOverrides(symbol)
+            -- 设置背包栏贴图
+            local function SetBackSymbol()
+                local item = inv.GetEquippedItem(inv, GLOBAL.EQUIPSLOTS.BACK) -- 获取已装备的物品
+                if item == nil then return end
+                SetSymbol('swap_body_tall', item)
+            end
+
+            -- 刷新贴图
+            local function RefreshEquipOverrides(_, data)
+                if not data then return end
+                local eslot = data.eslot
+
+                local is_head = eslot == GLOBAL.EQUIPSLOTS.HEAD or eslot == GLOBAL.EQUIPSLOTS.HAT
+
+                local is_body = eslot == GLOBAL.EQUIPSLOTS.BODY or eslot == GLOBAL.EQUIPSLOTS.BELLY or eslot == GLOBAL.EQUIPSLOTS.NECK or eslot == GLOBAL.EQUIPSLOTS.BACK
+
                 -- 渲染头部
-                if GLOBAL.EQUIPSLOTS.HAT and symbol == 'head' then
+                if is_head then
+                    player.AnimState:ClearOverrideSymbol("swap_hat")
                     SetHeadSymbol()
                 end
                 -- 渲染身体/背包
-                if GLOBAL.EQUIPSLOTS.BODY and symbol == 'body' then
+                if is_body then
+                    player.AnimState:ClearOverrideSymbol("swap_body")
                     player.AnimState:ClearOverrideSymbol("swap_body_tall")
-                    SetBackSymbol()
                     SetBodySymbol()
-                    -- player.AnimState:SetSymbolExchange("swap_body_tall", "swap_body")
+                    SetBackSymbol()
+                    player.AnimState:SetSymbolExchange("swap_body", "swap_body_tall") -- 设置层级
                 end
             end
 
-            local function OnEquip(_, data)
-                if not data or not data.item then return end
-                -- 如果开启帽子栏
-                if GLOBAL.EQUIPSLOTS.HAT then
-                    -- 头盔栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.HEAD then
-                        equipped_items.head = data.item -- 记录当前物品
-                        RefreshEquipOverrides('head')
-                        return
-                    end
-                    -- 帽子栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.HAT then
-                        equipped_items.hat = data.item -- 记录当前物品
-                        RefreshEquipOverrides('head')
-                        return
-                    end
-                end
-                -- 如果开启背包栏
-                if GLOBAL.EQUIPSLOTS.BACK then
-                    -- 护甲栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.BODY then
-                        equipped_items.body = data.item -- 记录当前物品
-                        RefreshEquipOverrides('body')
-                        return
-                    end
-                    -- 服装栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.BELLY then
-                        equipped_items.belly = data.item -- 记录当前物品
-                        RefreshEquipOverrides('body')
-                        return
-                    end
-                    -- 护符栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.NECK then
-                        equipped_items.neck = data.item -- 记录当前物品
-                        RefreshEquipOverrides('body')
-                        return
-                    end
-                    -- 背包栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.BACK then
-                        equipped_items.back = data.item -- 记录当前物品
-                        RefreshEquipOverrides('body')
-                        return
-                    end
-                end
-            end
-
-            local function OnUnequip(_, data)
-                if not data then return end
-                -- 如果开启帽子栏
-                if GLOBAL.EQUIPSLOTS.HAT then
-                    -- 头盔栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.HEAD then
-                        equipped_items.head = nil -- 移除当前物品
-                        RefreshEquipOverrides('head')
-                        return
-                    end
-                    -- 帽子栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.HAT then
-                        equipped_items.hat = nil -- 移除当前物品
-                        RefreshEquipOverrides('head')
-                        return
-                    end
-                end
-                -- 如果开启背包栏
-                if GLOBAL.EQUIPSLOTS.BACK then
-                    -- 护甲栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.BODY then
-                        equipped_items.body = nil -- 移除当前物品
-                        RefreshEquipOverrides('body')
-                        return
-                    end
-                    -- 服装栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.BELLY then
-                        equipped_items.belly = nil -- 移除当前物品
-                        RefreshEquipOverrides('body')
-                        return
-                    end
-                    -- 护符栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.NECK then
-                        equipped_items.neck = nil -- 移除当前物品
-                        RefreshEquipOverrides('body')
-                        return
-                    end
-                    -- 背包栏
-                    if data.eslot == GLOBAL.EQUIPSLOTS.BACK then
-                        equipped_items.back = nil -- 移除当前物品
-                        RefreshEquipOverrides('body')
-                        return
-                    end
-                end
-            end
-
-            player:ListenForEvent("equip", OnEquip)     -- 装备
-            player:ListenForEvent("unequip", OnUnequip) -- 卸载
+            player:ListenForEvent("equip", RefreshEquipOverrides)   -- 装备
+            player:ListenForEvent("unequip", RefreshEquipOverrides) -- 卸载
         end)
     end
 end
