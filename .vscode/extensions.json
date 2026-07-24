@@ -1,6 +1,5 @@
 {
   "recommendations": [
-    "sumneko.lua",
-    "lan.dst-lan"
+    "sumneko.lua"
   ]
 }
