@@ -293,22 +293,6 @@ local function InitPrefab()
             end
         end
     end)
-
-    -- 劫持 inventory:Equip()，在装备前最后一刻强制纠正 FORCE_SYMBOL_BELLY 物品的槽位
-    AddComponentPostInit("inventory", function(comp)
-        if not GLOBAL.TheWorld.ismastersim then return end
-
-        local _Equip = comp.Equip
-        function comp:Equip(item, ...)
-            if item and item.components.equippable then
-                local prefab = item.prefab
-                if GLOBAL.EQUIPSLOTS.BELLY and FORCE_SYMBOL_BELLY[prefab] then
-                    item.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
-                end
-            end
-            return _Equip(self, item, ...)
-        end
-    end)
 end
 InitPrefab()
 
@@ -679,6 +663,63 @@ local function RepairExtra()
 
     -- 开启背包栏或帽子栏需要重写贴图渲染逻辑
     if GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.HAT then
+        local items_anim_symbols = {} -- 记录物品的贴图数据 item.prefab → {slot, skin_build, symbol, item_guid, sym_build}
+
+        -- 劫持原版贴图渲染收集渲染数据
+        AddComponentPostInit("inventory", function(comp)
+            if not IsServer then return end -- 客户端不执行
+
+            local Equip_orig = comp.Equip
+            local Unequip_orig = comp.Unequip
+
+            -- 装备物品
+            function comp.Equip(self, item, ...)
+                if not (item and item.components.equippable) then
+                    return Equip_orig(self, item, ...)
+                end
+
+                local prefab = item.prefab
+
+                -- -- 强制纠正 FORCE_SYMBOL_BELLY 物品的槽位
+                -- if GLOBAL.EQUIPSLOTS.BELLY and FORCE_SYMBOL_BELLY[prefab] then
+                --     item.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY
+                -- end
+
+                local owner = self.inst
+
+                if not (owner and owner.AnimState) then
+                    return Equip_orig(self, item, ...)
+                end
+
+                local AnimState_orig = owner.AnimState
+
+                local OverrideItemSkinSymbol_orig = owner.AnimState.OverrideItemSkinSymbol -- 游戏贴图渲染
+
+                -- 拦截内部渲染逻辑
+                owner.AnimState.OverrideItemSkinSymbol = function(_, slot, skin_build, symbol, item_guid, sym_build)
+                    -- 记录部分物品的渲染参数
+                    if slot == "swap_body" or slot == "swap_body_tall" or slot == "swap_hat" then
+                        items_anim_symbols[item_guid] = { slot, skin_build, symbol, item_guid, sym_build }
+                    end
+                    AnimState_orig.OverrideItemSkinSymbol(AnimState_orig, slot, skin_build, symbol, item_guid, sym_build)
+                end
+
+                local result = Equip_orig(self, item, ...)
+                owner.AnimState.OverrideItemSkinSymbol = OverrideItemSkinSymbol_orig
+                return result
+            end
+
+            -- 卸下物品
+            function comp.Unequip(self, eslot, ...)
+                -- 卸下时清理该物品的贴图缓存
+                local item = self:GetEquippedItem(eslot)
+                if item and item.GUID then
+                    items_anim_symbols[item.GUID] = nil
+                end
+                return Unequip_orig(self, eslot, ...)
+            end
+        end)
+
         -- 重写贴图渲染逻辑
         AddPlayerPostInit(function(player)
             if not IsServer then return end -- 客户端不执行
