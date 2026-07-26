@@ -14,16 +14,15 @@ local HOVER_ITEM_CODE = GetModConfigData("HOVER_ITEM_CODE")
 local MOD_YBTX_BELLY = GetModConfigData("MOD_YBTX_BELLY")
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
 
-local SYMBOL_HAT = require("symbol_hat")                   -- 定义头饰栏物品
-local SYMBOL_BELLY = require("symbol_belly")               -- 定义服装栏物品
-local SYMBOL_WAIST = require("symbol_waist")               -- 定义腰包栏物品
-local SYMBOL_NECK = require("symbol_neck")                 -- 定义护符栏物品
-local SYMBOL_BACK = require("symbol_back")                 -- 定义背包栏物品
+local SYMBOL_HAT = require("symbol_hat")                 -- 定义头饰栏物品
+local SYMBOL_BELLY = require("symbol_belly")             -- 定义服装栏物品
+local SYMBOL_WAIST = require("symbol_waist")             -- 定义腰包栏物品
+local SYMBOL_NECK = require("symbol_neck")               -- 定义护符栏物品
+local SYMBOL_BACK = require("symbol_back")               -- 定义背包栏物品
 
-local SYMBOL_OPEN_TOP_HAT = require("symbol_open_top_hat") -- 定义强制头盔栏物品
-local FORCE_SYMBOL_HEAD = require("force_symbol_head")     -- 定义强制头盔栏物品
-local FORCE_SYMBOL_BODY = require("force_symbol_body")     -- 定义强制身体栏物品
-local FORCE_SYMBOL_BELLY = require("force_symbol_belly")   -- 定义强制服装栏物品
+local FORCE_SYMBOL_HEAD = require("force_symbol_head")   -- 定义强制头盔栏物品
+local FORCE_SYMBOL_BODY = require("force_symbol_body")   -- 定义强制身体栏物品
+local FORCE_SYMBOL_BELLY = require("force_symbol_belly") -- 定义强制服装栏物品
 
 -- player.components.talker:Say("prefab: " .. item.prefab) -- 调试用
 
@@ -208,11 +207,6 @@ local function InitPrefab()
         local equipslot = inst.components.equippable.equipslot -- 物品原所属栏
         local prefab = inst.prefab                             -- 物品名称
 
-        -- 一些模组物品没有添加 open_top_hat 标签
-        if SYMBOL_OPEN_TOP_HAT[prefab] then
-            inst:AddTag("open_top_hat")
-        end
-
         -- 物品需要强制保留在头盔栏
         if FORCE_SYMBOL_HEAD[prefab] then
             inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.HEAD -- 分配到头盔栏
@@ -235,7 +229,7 @@ local function InitPrefab()
         if equipslot == 'hands' then
             -- 检查是否属于腰包栏
             if GLOBAL.EQUIPSLOTS.WAIST and SYMBOL_WAIST[prefab] then
-                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.WAIST
+                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.WAIST -- 分配到腰包栏
                 return
             end
         end

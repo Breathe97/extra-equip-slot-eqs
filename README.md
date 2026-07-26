@@ -120,6 +120,8 @@ equip/unequip event
 
 ## 📝 更新日志
 
+- **2.4.2**：修复指南针无 `equippable` 组件时的崩溃问题；移除 `symbol_open_top_hat.lua`（已无用）
+- **2.4.1**：修复贴图。
 - **2.4.0**：重构贴图渲染机制——劫持 `inventory:Equip()` 动态拦截 `OverrideSymbol`/`OverrideItemSkinSymbol`，运行时自动收集物品的 build 和 symbol，不再需要 `AMULET_SYMBOL_MAP` 硬编码和 `onemanband`/`sunkenchest`/`backcub` 等特判；护符的 `torso_amulets` 自动适配；`symbol_back.lua` 新增 `sunkenchest` 条目；`symbol_neck.lua` 修正 `amulet` 符号名
 - **2.3.8**：修复雕像、沉底宝箱等可搬运重物装备到背包栏后贴图不显示的问题——沉底宝箱的物品 build 与 swap build 不同名，在 `SetSymbol` 中特判使用 `swap_sunken_treasurechest`；新增 `ClearOverrideSymbol("swap_body")` 清理逻辑防止贴图残留
 - **2.3.7**：修复棱镜靠背熊（`backcub`）装备后贴图不显示的问题——物品 build 与 swap build 不同名导致 `SetSymbol` 使用了错误的 build 名称
