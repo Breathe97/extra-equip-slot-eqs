@@ -43,41 +43,7 @@
 
 ## 🖼 贴图渲染逻辑
 
-模组**不干预**游戏原版的贴图渲染流程。物品分配到额外装备槽后，其 `onequipfn` 由游戏引擎自动调用，渲染逻辑完全由物品自身的 build/symbol 决定。
-
-### 符号位分工
-
-游戏角色身上有两个相关的符号位：
-
-| 符号 | 用途 | 渲染内容 |
-|------|------|----------|
-| **`swap_body`** | 身体贴图 | 护甲、服装、护符 |
-| **`swap_body_tall`** | 背包贴图 | 所有背包类物品 |
-| **`swap_hat`** | 头部贴图 | 头盔、帽子、头饰 |
-
-### 指南针特例
-
-指南针分配到腰包栏后，原版 `onequipfn` 会在 `swap_body` 上渲染指南针贴图，导致角色身体上出现指南针图标。模组通过 `AddPrefabPostInit("compass", ...)` 包装 `onequipfn`，在执行时临时屏蔽 `OverrideSymbol`/`OverrideSkinSymbol`，**只阻止贴图渲染，不影响耐久消耗等逻辑**：
-
-```lua
-AddPrefabPostInit("compass", function(inst)
-    local orig_onequip = inst.components.equippable.onequipfn
-    inst.components.equippable:SetOnEquip(function(item, owner)
-        if owner and owner.AnimState then
-            local anim = owner.AnimState
-            local orig_oversym = anim.OverrideSymbol
-            local orig_skinsym = anim.OverrideSkinSymbol
-            anim.OverrideSymbol = function() end     -- 屏蔽渲染
-            anim.OverrideSkinSymbol = function() end  -- 屏蔽渲染
-            if orig_onequip then
-                orig_onequip(item, owner)              -- 执行逻辑（耐久消耗等）
-            end
-            anim.OverrideSymbol = orig_oversym         -- 恢复
-            anim.OverrideSkinSymbol = orig_skinsym     -- 恢复
-        end
-    end)
-end)
-```
+模组不干预游戏原版的贴图渲染流程。物品分配到额外装备槽后，其 `onequipfn` 由游戏引擎自动调用，渲染逻辑由物品自身的 build/symbol 决定。
 
 ### 槽位分配
 
@@ -89,9 +55,7 @@ end)
 4. 原身体物品 → 依次检查 `SYMBOL_NECK`（护符）、`SYMBOL_BACK`（背包）、`SYMBOL_BELLY`（服装）
 5. 开启自动识别后，根据标签（`amulet`/`backpack`/`candybag`）或组件属性（`waterproofer`/`insulator`/`rainimmunity`）智能分配
 
-### 露顶帽
 
-部分帽子（如棱镜-皇帝的皇冠）是露顶设计，需要显示完整发型。这些物品在 `symbol_hat.lua` 映射表中定义，其 `onequipfn` 会自动处理 `HAIR_HAT`/`HAIR_NOHAT` 的显示状态，模组不额外干预。
 
 ## 🛠 兼容性修复
 
@@ -118,34 +82,7 @@ end)
 | 自动识别护符 | 开启 | 有 `amulet` 标签的物品自动归入护符栏 |
 | 自动识别背包 | 开启 | 有 `backpack`/`candybag` 标签的物品自动归入背包栏 |
 
-## 📝 更新日志
 
-- **2.4.2**：修复指南针无 `equippable` 组件时的崩溃问题；移除 `symbol_open_top_hat.lua`（已无用）
-- **2.4.1**：修复贴图。
-- **2.4.0**：重构贴图渲染机制——劫持 `inventory:Equip()` 动态拦截 `OverrideSymbol`/`OverrideItemSkinSymbol`，运行时自动收集物品的 build 和 symbol，不再需要 `AMULET_SYMBOL_MAP` 硬编码和 `onemanband`/`sunkenchest`/`backcub` 等特判；护符的 `torso_amulets` 自动适配；`symbol_back.lua` 新增 `sunkenchest` 条目；`symbol_neck.lua` 修正 `amulet` 符号名
-- **2.3.8**：修复雕像、沉底宝箱等可搬运重物装备到背包栏后贴图不显示的问题——沉底宝箱的物品 build 与 swap build 不同名，在 `SetSymbol` 中特判使用 `swap_sunken_treasurechest`；新增 `ClearOverrideSymbol("swap_body")` 清理逻辑防止贴图残留
-- **2.3.7**：修复棱镜靠背熊（`backcub`）装备后贴图不显示的问题——物品 build 与 swap build 不同名导致 `SetSymbol` 使用了错误的 build 名称
-- **2.3.6**：修复错误识别服装栏
-- **2.3.5**：收紧服装栏自动识别逻辑，新增 `armor == nil` 判断，有护甲属性的物品不再分配到服装栏；各物品映射表补齐尾逗号统一格式；更新 modinfo 描述
-- **2.3.4**：移除 `MOD_HYCS_YHFF`（雨花·扶风）和 `MOD_XE_YMYD`（遗梦芸典）独立配置项，相关物品改为强制保留在身体栏或走通用自动识别；修复 MOD_LJ_ZGF（子圭·釜）逻辑与描述不一致的问题；`AUTO_SLOTS_BACK` 增加 `armor == nil` 判断避免有护甲属性的背包被误分配到背包栏；`GetOverflowContainer` 原版容器满时回退检查新槽而非直接返回；新增棱镜-皇帝的皇冠 `open_top_hat` 标签
-- **2.3.3**：修复部分客户端兼容性问题。
-- **2.3.2**：修复部分客户端兼容性问题。
-- **2.3.1**：调整头饰栏物品列表，移除 `bushhat`（灌木帽）、`nutrientsgoggleshat`/`plantregistryhat`（先驱帽），新增 `ghostflowerhat`（幽魂花冠）、`salty_doghat`（咸狗帽）
-- **2.2.6**：更新模组封面图标
-- **2.2.5**：更新模组图标，压缩贴图尺寸降低包体积
-- **2.2.4**：重构贴图渲染逻辑，去掉 `DoTaskInTime` 帧延迟渲染改为直接调用；`OnEquip`/`OnUnequip` 增加条件守卫只处理已启用的槽位；移除无用回退调用和已注释代码；重构 `GLOBAL.EQUIPSLOTS` 为本地映射 `EQUIPSLOTS_MAP` 提升兼容性；移除腰包栏在贴图渲染中的跟踪
-- **2.2.3**：新增强制头盔栏物品（启迪之冠、刮地皮头盔强制保留在头盔栏）；移除过时的腰包栏默认值变更记录
-- **2.2.2**：简化头部贴图渲染逻辑，移除冗余的发型状态管理（HAIR_HAT/HAIR_NOHAT/HAIR），由游戏默认渲染自动处理
-- **2.2.1**：修复手持物品判断错误（`'head'` → `'hands'`）；启迪之冠跳过槽位分配；`FORCE_SYMBOL_BELLY` 改为 Equip 劫持；重构贴图渲染逻辑为独立函数并新增头部贴图渲染
-- **2.2.0**：新增头饰栏，用于装备非护甲的头饰类物品；头饰物品支持自动识别；调整部分槽位默认值为关闭
-- **2.1.1**：将独奏乐器（onemanband）从腹部栏移至背部栏，特殊处理 `swap_body_tall` 源符号名
-- **2.1.0**：重构贴图渲染逻辑（背包 → `swap_body`，身体 → `swap_body_tall`），新增护符合名渲染（`torso_amulets`），新增腰包栏及指南针 HUD 修复，新增容器堆叠修复（客户端+服务端），新增鬼魂复活自动重开背包
-- **2.0.9**：优化分配逻辑，重构贴图渲染逻辑以支持背包与护甲同时显示
-- **2.0.8**：修复背包贴图更新冲突，暂时不支持同时显示
-- **2.0.7**：修复背包贴图不显示
-- **2.0.6**：优化智能识别逻辑，移除部分不必要设置项
-- **2.0.5**：修复代码合并导致的使用问题
-- 更早版本：请前往创意工坊页面查看
 
 ## ⚠️ 兼容说明
 
