@@ -55,42 +55,42 @@
 
 ### 动态符号收集
 
-v2.4.0 重构了贴图渲染机制，不再硬编码物品的 build 和 symbol 映射，改为**运行时动态拦截**：
+v2.4.0 重构了贴图渲染机制，改为**运行时动态拦截 + 事件驱动渲染**：
 
-1. 劫持 `inventory:Equip()`，在装备物品时用一个代理对象替换 `owner.AnimState`
-2. 物品的 `onequipfn` 执行时会调用 `OverrideSymbol` 或 `OverrideItemSkinSymbol`
-3. 代理拦截这些调用，将 `{build, symbol}` 记录到 `items_anim_symbols` 表中（以 `prefab` 为 key）
-4. 记录后放行，让原版调用正常执行
-5. 监听 `equip`/`unequip` 事件，从 `items_anim_symbols` 查表并调用 `OverrideSymbol`/`OverrideItemSkinSymbol` 渲染
-
-这样不再需要 `AMULET_SYMBOL_MAP` 硬编码，也不再需要为 `onemanband`、`sunkenchest`、`backcub` 等特殊物品做特判——它们的 `onequipfn` 自然会使用正确的 build 和 symbol，代理直接抓到即可。
+1. 劫持 `inventory:Equip()`，在物品装备过程中拦截 `OverrideSymbol`/`OverrideSkinSymbol` 调用
+2. 将 `{build, symbol}` 记录到 `items_anim_symbols` 表中（以 `item.GUID` 为 key，实例隔离）
+3. 放行原调用，恢复原始函数
+4. 监听 `equip`/`unequip` 事件，通过 `equipped_items` 表跟踪当前装备状态
+5. 事件触发时查 `items_anim_symbols` 获取 build/symbol，调用 `OverrideSymbol`/`OverrideSkinSymbol` 渲染
 
 ### 执行顺序
 
 ```lua
 -- 事件监听入口
-RefreshEquipOverrides(_, data)
-  → 判断事件来源 eslot
+equip/unequip event
+  → 判断 eslot 类型（IsHead / IsBody）
+  → 更新 equipped_items 表
 
--- 头部渲染（is_head）
+-- 头部渲染（IsHead）
   → 重置发型/帽子显示状态
-  → 优先取 HAT 槽，没有则取 HEAD 槽
-  → render_item("swap_hat", item)  从 items_anim_symbols 查表渲染
+  → 从 equipped_items 取 HEAD 或 HAT 槽物品
+  → SetSymbol("swap_hat", item)  查 items_anim_symbols 渲染
   → 露顶帽/普通帽分别处理发型显示
 
--- 身体/背包渲染（is_body）
+-- 身体/背包渲染（IsBody）
   → ClearOverrideSymbol("swap_body_tall")  清空旧背包
-  → render_item("swap_body_tall", back_item)  背包贴图
-  → render_item("swap_body", body_item)      护甲/服装/护符贴图
+  → SetSymbol("swap_body_tall", back_item)  背包贴图
+  → SetSymbol("swap_body", body_item)       护甲/服装/护符贴图
 ```
 
-其中 `render_item` 统一查 `items_anim_symbols`，有皮肤走 `OverrideItemSkinSymbol`，无皮肤走 `OverrideSymbol`。
+其中 `SetSymbol` 统一查 `items_anim_symbols`（按 `item.GUID`），有皮肤走 `OverrideSkinSymbol`，无皮肤走 `OverrideSymbol`。
 
 ### 动态拦截的优势
 
 - **无需硬编码映射表**——护符的 `torso_amulets`/`redamulet` 等符号从 `onequipfn` 自动捕获
 - **自动兼容 mod 物品**——只要 mod 物品有正确的 `onequipfn`，无需额外适配
-- **皮肤自动支持**——`OverrideItemSkinSymbol` 由代理自动转发
+- **皮肤自动支持**——`OverrideSkinSymbol` 由代理自动转发
+- **实例隔离**——`items_anim_symbols` 以 `item.GUID` 为 key，多人互不影响
 - **移除大量特判代码**——`onemanband`、`sunkenchest`、`backcub` 等特殊 case 全部删除
 
 ## 🛠 兼容性修复
