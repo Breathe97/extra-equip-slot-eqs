@@ -43,6 +43,8 @@
 
 ## 🖼 贴图渲染逻辑
 
+模组**不干预**游戏原版的贴图渲染流程。物品分配到额外装备槽后，其 `onequipfn` 由游戏引擎自动调用，渲染逻辑完全由物品自身的 build/symbol 决定。
+
 ### 符号位分工
 
 游戏角色身上有两个相关的符号位：
@@ -50,48 +52,46 @@
 | 符号 | 用途 | 渲染内容 |
 |------|------|----------|
 | **`swap_body`** | 身体贴图 | 护甲、服装、护符 |
-| **`swap_body_tall`** | 背包贴图 | 所有背包类物品（含光谱背包的变色粒子） |
+| **`swap_body_tall`** | 背包贴图 | 所有背包类物品 |
 | **`swap_hat`** | 头部贴图 | 头盔、帽子、头饰 |
 
-### 动态符号收集
+### 指南针特例
 
-v2.4.0 重构了贴图渲染机制，改为**运行时动态拦截 + 事件驱动渲染**：
-
-1. 劫持 `inventory:Equip()`，在物品装备过程中拦截 `OverrideSymbol`/`OverrideSkinSymbol` 调用
-2. 将 `{build, symbol}` 记录到 `items_anim_symbols` 表中（以 `item.GUID` 为 key，实例隔离）
-3. 放行原调用，恢复原始函数
-4. 监听 `equip`/`unequip` 事件，通过 `equipped_items` 表跟踪当前装备状态
-5. 事件触发时查 `items_anim_symbols` 获取 build/symbol，调用 `OverrideSymbol`/`OverrideSkinSymbol` 渲染
-
-### 执行顺序
+指南针分配到腰包栏后，原版 `onequipfn` 会在 `swap_body` 上渲染指南针贴图，导致角色身体上出现指南针图标。模组通过 `AddPrefabPostInit("compass", ...)` 包装 `onequipfn`，在执行时临时屏蔽 `OverrideSymbol`/`OverrideSkinSymbol`，**只阻止贴图渲染，不影响耐久消耗等逻辑**：
 
 ```lua
--- 事件监听入口
-equip/unequip event
-  → 判断 eslot 类型（IsHead / IsBody）
-  → 更新 equipped_items 表
-
--- 头部渲染（IsHead）
-  → 重置发型/帽子显示状态
-  → 从 equipped_items 取 HEAD 或 HAT 槽物品
-  → SetSymbol("swap_hat", item)  查 items_anim_symbols 渲染
-  → 露顶帽/普通帽分别处理发型显示
-
--- 身体/背包渲染（IsBody）
-  → ClearOverrideSymbol("swap_body_tall")  清空旧背包
-  → SetSymbol("swap_body_tall", back_item)  背包贴图
-  → SetSymbol("swap_body", body_item)       护甲/服装/护符贴图
+AddPrefabPostInit("compass", function(inst)
+    local orig_onequip = inst.components.equippable.onequipfn
+    inst.components.equippable:SetOnEquip(function(item, owner)
+        if owner and owner.AnimState then
+            local anim = owner.AnimState
+            local orig_oversym = anim.OverrideSymbol
+            local orig_skinsym = anim.OverrideSkinSymbol
+            anim.OverrideSymbol = function() end     -- 屏蔽渲染
+            anim.OverrideSkinSymbol = function() end  -- 屏蔽渲染
+            if orig_onequip then
+                orig_onequip(item, owner)              -- 执行逻辑（耐久消耗等）
+            end
+            anim.OverrideSymbol = orig_oversym         -- 恢复
+            anim.OverrideSkinSymbol = orig_skinsym     -- 恢复
+        end
+    end)
+end)
 ```
 
-其中 `SetSymbol` 统一查 `items_anim_symbols`（按 `item.GUID`），有皮肤走 `OverrideSkinSymbol`，无皮肤走 `OverrideSymbol`。
+### 槽位分配
 
-### 动态拦截的优势
+所有物品的槽位分配在 `InitPrefab` 中通过 `AddPrefabPostInitAny` 完成：
 
-- **无需硬编码映射表**——护符的 `torso_amulets`/`redamulet` 等符号从 `onequipfn` 自动捕获
-- **自动兼容 mod 物品**——只要 mod 物品有正确的 `onequipfn`，无需额外适配
-- **皮肤自动支持**——`OverrideSkinSymbol` 由代理自动转发
-- **实例隔离**——`items_anim_symbols` 以 `item.GUID` 为 key，多人互不影响
-- **移除大量特判代码**——`onemanband`、`sunkenchest`、`backcub` 等特殊 case 全部删除
+1. 检查 `FORCE_SYMBOL_HEAD/BODY/BELLY` 强制槽位映射表
+2. 原手持物品 → 检查 `SYMBOL_WAIST` 腰包栏
+3. 原头部物品 → 检查 `SYMBOL_HAT` 头饰栏
+4. 原身体物品 → 依次检查 `SYMBOL_NECK`（护符）、`SYMBOL_BACK`（背包）、`SYMBOL_BELLY`（服装）
+5. 开启自动识别后，根据标签（`amulet`/`backpack`/`candybag`）或组件属性（`waterproofer`/`insulator`/`rainimmunity`）智能分配
+
+### 露顶帽
+
+部分帽子（如棱镜-皇帝的皇冠）是露顶设计，需要显示完整发型。这些物品在 `symbol_hat.lua` 映射表中定义，其 `onequipfn` 会自动处理 `HAIR_HAT`/`HAIR_NOHAT` 的显示状态，模组不额外干预。
 
 ## 🛠 兼容性修复
 
