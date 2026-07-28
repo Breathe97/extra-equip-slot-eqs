@@ -14,6 +14,8 @@ local HOVER_ITEM_CODE = GetModConfigData("HOVER_ITEM_CODE")
 local MOD_YBTX_BELLY = GetModConfigData("MOD_YBTX_BELLY")
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
 
+local FIX_SYMBOL_BUILD = require("fix_symbol_build")     -- 一些物品的build和Symbol不正常
+
 local SYMBOL_HAT = require("symbol_hat")                 -- 定义头饰栏物品
 local SYMBOL_BELLY = require("symbol_belly")             -- 定义服装栏物品
 local SYMBOL_WAIST = require("symbol_waist")             -- 定义腰包栏物品
@@ -24,7 +26,7 @@ local FORCE_SYMBOL_HEAD = require("force_symbol_head")   -- 定义强制头盔�
 local FORCE_SYMBOL_BODY = require("force_symbol_body")   -- 定义强制身体栏物品
 local FORCE_SYMBOL_BELLY = require("force_symbol_belly") -- 定义强制服装栏物品
 
--- player.components.talker:Say("prefab: " .. item.prefab) -- 调试用
+-- GLOBAL.TheNet:SystemMessage("prefab: " .. prefab)-- 调试用
 
 -- 校准 symbol表 根据设置中生成最终的物品表 后续再根据该表进行装备栏的分配
 local function CalibrationSymBol()
@@ -477,7 +479,7 @@ local function RepairExtra()
         -- 监听从鬼魂复活事件，重新打开背包容器
         -- 大门/传送阵/肉块雕像复活时，引擎会关闭所有容器，护符复活没有这个问题
         AddPrefabPostInitAny(function(inst)
-            if not GLOBAL.TheWorld.ismastersim then return end
+            if not IsServer then return end -- 客户端不执行
             -- 只对玩家角色生效（有 inventory 和 health 组件的就是玩家）
             if inst.components.inventory ~= nil and inst.components.health ~= nil then
                 inst:ListenForEvent("respawnfromghost", function()
@@ -545,7 +547,7 @@ local function RepairExtra()
     end
 
     -- 开启任意装备栏都需要修复
-    if GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.WAIST or GLOBAL.EQUIPSLOTS.HAT then
+    if GLOBAL.EQUIPSLOTS.HAT or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.WAIST or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
         -- 服务器端 GetOverflowContainer 修复：为新增装备槽提供正确的物品堆叠容器识别
         -- 问题背景同客户端：原版 inventory:GetOverflowContainer() 只检查 BODY 槽
         -- 导致玩家捡物品时不会自动与背包/服装容器中的同类物品堆叠
@@ -658,6 +660,93 @@ local function RepairExtra()
             if not IsServer then
                 inst.GetOverflowContainer = GetOverflowContainer
             end
+        end)
+    end
+
+    -- 开启背包栏后的修复
+    if GLOBAL.EQUIPSLOTS.HAT or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
+        -- 重写贴图渲染逻辑
+        AddPlayerPostInit(function(player)
+            if not IsServer then return end -- 客户端不执行
+
+            -- 获取玩家当前装备的物品
+            local function GetPlayerEquippedItem(slot)
+                if slot == 'head' then
+                    local head_item = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.HEAD)
+                    local hat_item  = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.HAT)
+                    return head_item or hat_item or nil
+                end
+                if slot == 'body' then
+                    local body_item  = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY)
+                    local belly_item = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BELLY)
+                    local neck_item  = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.NECK)
+                    return body_item or belly_item or neck_item or nil
+                end
+                if slot == 'back' then
+                    local back_item = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                    return back_item or nil
+                end
+                return nil
+            end
+
+            -- 重新装备一次触发原版渲染
+            local function Reequip(slot)
+                local item = GetPlayerEquippedItem(slot) -- 头部物品
+                if item == nil then return end
+                -- 重新装备一次触发原版渲染
+                if item.components.equippable and item.components.equippable.onunequipfn then
+                    item.components.equippable.onunequipfn(item, player)
+                end
+                if item.components.equippable and item.components.equippable.onequipfn then
+                    item.components.equippable.onequipfn(item, player)
+                end
+            end
+
+            -- 设置背包栏贴图
+            local function SetBackSymbol()
+                player.AnimState:ClearOverrideSymbol("swap_body_tall")
+                local item = GetPlayerEquippedItem("back") -- 背包栏物品
+                if item == nil then return end
+
+                local oldsymbol  = "swap_body_tall"
+                local newsymbol  = "swap_body"
+
+                local build      = item.AnimState:GetBuild()
+                local skin_build = item:GetSkinBuild()
+
+                if skin_build and skin_build ~= '' then
+                    player.AnimState:OverrideItemSkinSymbol(oldsymbol, skin_build, newsymbol, item.GUID, build) -- 设置皮肤物品贴图
+                else
+                    -- 部分物品的build、symbol获取不准确
+                    local fix_item = FIX_SYMBOL_BUILD[item.prefab]
+                    if fix_item then
+                        build = fix_item.build
+                        newsymbol = fix_item.symbol
+                    end
+                    player.AnimState:OverrideSymbol(oldsymbol, build, newsymbol) -- 设置原版物品贴图
+                end
+            end
+
+            -- 重新渲染人物贴图
+            local function RefreshEquipOverrides(_, data)
+                if not data or not data.eslot then return end
+                local eslot = data.eslot
+                local is_head = eslot == GLOBAL.EQUIPSLOTS.HEAD or eslot == GLOBAL.EQUIPSLOTS.HAT
+                local is_body = eslot == GLOBAL.EQUIPSLOTS.BODY or eslot == GLOBAL.EQUIPSLOTS.BELLY or eslot == GLOBAL.EQUIPSLOTS.NECK or eslot == GLOBAL.EQUIPSLOTS.BACK
+
+                -- 渲染头部
+                if is_head then
+                    Reequip("head")
+                end
+                -- 渲染身体/背包
+                if is_body then
+                    Reequip("body")
+                    SetBackSymbol()
+                end
+            end
+
+            player:ListenForEvent("equip", RefreshEquipOverrides)   -- 装备
+            player:ListenForEvent("unequip", RefreshEquipOverrides) -- 卸载
         end)
     end
 end
