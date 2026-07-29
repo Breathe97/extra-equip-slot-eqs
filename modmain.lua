@@ -717,15 +717,6 @@ local function RepairExtra()
         AddPlayerPostInit(function(player)
             if not IsServer then return end -- 客户端不执行
 
-            -- 是否为已变色的光谱背包
-            local function isSpectralBackpack(item)
-                if item.components.colouradder == nil then return end -- 无颜色叠加器组件
-                -- 通过 colouradder 检测当前颜色
-                local r, g, b, a = item.components.colouradder:GetCurrentColour()
-                local is_color_changed = (r ~= 0 or g ~= 0 or b ~= 0)
-                return is_color_changed
-            end
-
             -- 获取玩家当前装备的物品
             local function GetPlayerEquippedItem(slot)
                 if slot == 'head' then
