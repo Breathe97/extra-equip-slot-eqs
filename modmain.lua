@@ -425,24 +425,22 @@ local function RepairExtra()
                 if not rebirth_state then
                     return
                 end
-
-                local original_rebirth_onexit = rebirth_state.onexit -- 保存原版重生状态的退出函数，后续需在自定义逻辑后调用，确保原版功能不受影响
-
-                rebirth_state.onexit = function(inst)
-                    local item = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.NECK) -- 从 NECK 槽查找护符（原版查 BODY，但现在护符在 NECK）
-
-                    -- 查询到重生护符
-                    if item and item.prefab == "amulet" then
-                        inst.components.inventory:RemoveItem(item)      -- 从 NECK 槽移除护符
-                        inst.AnimState:ClearOverrideSymbol("swap_body") -- 清理角色身体上的背包/服装贴图残留
-                        item.persists = false
-                        item:Remove()                                   -- 销毁护符（防止复活后重复使用）
+                local original_rebirth_onenter = rebirth_state.onenter
+                -- 劫持 onenter：让原版查 BODY 时实际查 NECK
+                rebirth_state.onenter = function(inst)
+                    local orig_Get = inst.components.inventory.GetEquippedItem
+                    inst.components.inventory.GetEquippedItem = function(self, eslot)
+                        if eslot == GLOBAL.EQUIPSLOTS.BODY then
+                            return orig_Get(self, GLOBAL.EQUIPSLOTS.NECK)
+                        end
+                        return orig_Get(self, eslot)
                     end
 
-                    -- 执行原版退出函数（如果存在的话）
-                    if original_rebirth_onexit then
-                        original_rebirth_onexit(inst)
+                    if original_rebirth_onenter then
+                        original_rebirth_onenter(inst)
                     end
+
+                    inst.components.inventory.GetEquippedItem = orig_Get
                 end
             end)
         end
@@ -472,6 +470,40 @@ local function RepairExtra()
             end
         end
         fixSetRecipe() -- 修复护符栏配方查询
+    end
+
+    -- 开启腰包栏后的修复
+    if GLOBAL.EQUIPSLOTS.WAIST then
+        -- 修复指南针 HUD 适配腰包栏
+        -- 原版 TryCompass 只检查 EQUIPSLOTS.HANDS，腰包指南针无法触发 HUD
+        AddGlobalClassPostConstruct("widgets/hudcompass", "HudCompass", function(self)
+            -- 卸下腰包指南针时关闭 HUD
+            self.inst:ListenForEvent("unequip", function(inst, data)
+                if data.eslot == GLOBAL.EQUIPSLOTS.WAIST then
+                    self:CloseCompass()
+                end
+            end, self.owner)
+
+            -- 刷新背包时检查腰包栏
+            self.inst:ListenForEvent("refreshinventory", function()
+                if self.owner.replica.inventory ~= nil then
+                    local equipment = self.owner.replica.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.WAIST)
+                    if equipment ~= nil and equipment:HasTag("compass") then
+                        self:OpenCompass()
+                    end
+                end
+            end, self.owner)
+
+            -- 初始化时检查腰包栏（原版 TryCompass 只查 HANDS）
+            self.inst:DoTaskInTime(0, function()
+                if self.owner.replica.inventory ~= nil then
+                    local equipment = self.owner.replica.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.WAIST)
+                    if equipment ~= nil and equipment:HasTag("compass") then
+                        self:OpenCompass()
+                    end
+                end
+            end)
+        end)
     end
 
     -- 开启背包栏后的修复
@@ -512,61 +544,24 @@ local function RepairExtra()
         end)
     end
 
-    -- 开启腰包栏后的修复
-    if GLOBAL.EQUIPSLOTS.WAIST then
-        -- 修复指南针 HUD 适配腰包栏
-        -- 原版 TryCompass 只检查 EQUIPSLOTS.HANDS，腰包指南针无法触发 HUD
-        AddGlobalClassPostConstruct("widgets/hudcompass", "HudCompass", function(self)
-            -- 卸下腰包指南针时关闭 HUD
-            self.inst:ListenForEvent("unequip", function(inst, data)
-                if data.eslot == GLOBAL.EQUIPSLOTS.WAIST then
-                    self:CloseCompass()
-                end
-            end, self.owner)
+    -- 开启服装/护符/背包栏后的修复
+    if GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
+        -- 原来只有一个body栏 现在扩展为了4个
+        local body_slots = {
+            GLOBAL.EQUIPSLOTS.BODY,
+            GLOBAL.EQUIPSLOTS.BELLY,
+            GLOBAL.EQUIPSLOTS.NECK,
+            GLOBAL.EQUIPSLOTS.BACK,
+        }
 
-            -- 刷新背包时检查腰包栏
-            self.inst:ListenForEvent("refreshinventory", function()
-                if self.owner.replica.inventory ~= nil then
-                    local equipment = self.owner.replica.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.WAIST)
-                    if equipment ~= nil and equipment:HasTag("compass") then
-                        self:OpenCompass()
-                    end
-                end
-            end, self.owner)
-
-            -- 初始化时检查腰包栏（原版 TryCompass 只查 HANDS）
-            self.inst:DoTaskInTime(0, function()
-                if self.owner.replica.inventory ~= nil then
-                    local equipment = self.owner.replica.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.WAIST)
-                    if equipment ~= nil and equipment:HasTag("compass") then
-                        self:OpenCompass()
-                    end
-                end
-            end)
-        end)
-    end
-
-    -- 开启任意装备栏都需要修复
-    if GLOBAL.EQUIPSLOTS.HAT or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.WAIST or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
         -- 服务器端 GetOverflowContainer 修复：为新增装备槽提供正确的物品堆叠容器识别
-        -- 问题背景同客户端：原版 inventory:GetOverflowContainer() 只检查 BODY 槽
-        -- 导致玩家捡物品时不会自动与背包/服装容器中的同类物品堆叠
         AddComponentPostInit("inventory", function(comp)
-            if not IsServer then return end -- 客户端不执行
+            if not IsServer then return end
+
+            -- 重写容器查询
             local _GetOverflowContainer = comp.GetOverflowContainer
             function comp:GetOverflowContainer()
-                -- 先尝试原版逻辑（仅 BODY 槽）
-                local container = _GetOverflowContainer(self)
-                if container then
-                    -- 原版容器还有空位，直接用它
-                    if not container:IsFull() then
-                        return container
-                    end
-                    -- 原版容器满了，不返回，继续检查新槽
-                end
-
-                -- 检查新增装备槽的打开容器
-                for _, eslot in ipairs({ GLOBAL.EQUIPSLOTS.BACK, GLOBAL.EQUIPSLOTS.BELLY, GLOBAL.EQUIPSLOTS.HAT, GLOBAL.EQUIPSLOTS.WAIST, GLOBAL.EQUIPSLOTS.NECK }) do
+                for _, eslot in ipairs(body_slots) do
                     if eslot then
                         local item = self:GetEquippedItem(eslot)
                         if item and item.components.container and item.components.container:IsOpen() then
@@ -574,37 +569,90 @@ local function RepairExtra()
                         end
                     end
                 end
+                local container = _GetOverflowContainer(self)
+                if container then
+                    return container
+                end
+            end
+
+            -- 在单个容器中查找可用栏位：堆叠优先，空位次之
+            local function FindSlotInContainer(c, item)
+                if item.components.stackable then
+                    for k, v in pairs(c.slots) do
+                        if v and v.components.stackable
+                            and not v.components.stackable:IsFull()
+                            and v.components.stackable:CanStackWith(item)
+                            and c:CanTakeItemInSlot(item, k) then
+                            return k
+                        end
+                    end
+                end
+                for k = 1, c:GetNumSlots() do
+                    if c:CanTakeItemInSlot(item, k) and not c.slots[k] then
+                        return k
+                    end
+                end
+            end
+
+            -- 遍历槽位列表，在非 overflow 的打开容器中查找可用栏位
+            local function TryFindSlotInExtraContainers(self, item, slots, overflow)
+                for _, eslot in ipairs(slots) do
+                    if eslot then
+                        local c = self:GetEquippedItem(eslot)
+                        c = c and c.components.container
+                        if c and c ~= overflow and c:IsOpen() then
+                            local k = FindSlotInContainer(c, item)
+                            if k then
+                                return k, c
+                            end
+                        end
+                    end
+                end
+            end
+
+            -- 原版只查 overflow 那一个容器，这里兜底检查所有扩展槽位
+            local _GetNextAvailableSlot = comp.GetNextAvailableSlot
+            function comp:GetNextAvailableSlot(item)
+                local slot, container = _GetNextAvailableSlot(self, item)
+                if slot then
+                    return slot, container
+                end
+                local k, c = TryFindSlotInExtraContainers(self, item, body_slots, self:GetOverflowContainer())
+                if k then
+                    return k, c
+                end
+                return nil, self.itemslots
             end
         end)
 
-        -- 容器堆叠修复：为新增装备槽（BELLY/NECK/BACK）提供正确的物品堆叠容器识别
-        -- 问题背景：原版 GetOverflowContainer 只检查 BODY 和 HEAD 槽位的打开容器。
-        --          当物品被分配到 BELLY 或 BACK 槽时，这些槽位的容器不会被识别为"溢出目标"，
-        --          导致玩家从背包/服装容器中拿取物品时，堆叠/整理逻辑失效。
-        -- 解决思路：重写 GetOverflowContainer，使其覆盖所有可能装有容器的装备槽位。
+        -- 客户端 GetOverflowContainer 修复：为新增装备槽提供正确的物品堆叠容器识别
         AddPrefabPostInit("inventory_classified", function(inst)
             -- 自定义的溢出容器查找函数，替代 inventory_classified 中的原版函数
             -- 返回值：当前玩家正打开的某个容器（用于物品堆叠的目标容器），如果没有打开的容器则返回 nil
+            ---------------------------------------------------------------
+            -- 客户端 GetOverflowContainer 增强版
+            -- 优先返回有空位的容器，全满时返回第一个打开的（用于堆叠）
+            ---------------------------------------------------------------
             local function GetOverflowContainer()
-                if inst.ignoreoverflow then return end -- 如果设置了忽略溢出标志，则跳过（某些特殊物品或状态需要）
+                if inst.ignoreoverflow then return end
 
-                -- 获取指定装备槽位上已打开的容器，如果该槽位没有物品或无容器/未打开则返回 nil
-                local function getOpenContainer(eslot)
-                    local item = inst.GetEquippedItem(inst, eslot)
-                    if item and item.replica and item.replica.container and item.replica.container._isopen then
-                        return item.replica.container
+                local first_open = nil
+
+                for _, eslot in ipairs(body_slots) do
+                    if eslot then
+                        local item = inst.GetEquippedItem(inst, eslot)
+                        if item and item.replica and item.replica.container and item.replica.container._isopen then
+                            if not item.replica.container:IsFull() then
+                                return item.replica.container
+                            end
+                            if first_open == nil then
+                                first_open = item.replica.container
+                            end
+                        end
                     end
                 end
 
-                -- 按优先级顺序查找已打开的容器
-                return
-                    getOpenContainer(GLOBAL.EQUIPSLOTS.BACK)
-                    or getOpenContainer(GLOBAL.EQUIPSLOTS.BODY)
-                    or getOpenContainer(GLOBAL.EQUIPSLOTS.HEAD)
-                    or getOpenContainer(GLOBAL.EQUIPSLOTS.BELLY)
-                    or getOpenContainer(GLOBAL.EQUIPSLOTS.HAT)
-                    or getOpenContainer(GLOBAL.EQUIPSLOTS.WAIST)
-                    or getOpenContainer(GLOBAL.EQUIPSLOTS.NECK)
+                return first_open
             end
 
             -- 需要替换内部 GetOverflowContainer 引用的方法列表
@@ -663,11 +711,20 @@ local function RepairExtra()
         end)
     end
 
-    -- 开启背包栏后的修复
+    -- 开启帽子/服装/护符/背包栏后的修复
     if GLOBAL.EQUIPSLOTS.HAT or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
         -- 重写贴图渲染逻辑
         AddPlayerPostInit(function(player)
             if not IsServer then return end -- 客户端不执行
+
+            -- 是否为已变色的光谱背包
+            local function isSpectralBackpack(item)
+                if item.components.colouradder == nil then return end -- 无颜色叠加器组件
+                -- 通过 colouradder 检测当前颜色
+                local r, g, b, a = item.components.colouradder:GetCurrentColour()
+                local is_color_changed = (r ~= 0 or g ~= 0 or b ~= 0)
+                return is_color_changed
+            end
 
             -- 获取玩家当前装备的物品
             local function GetPlayerEquippedItem(slot)
