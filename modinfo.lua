@@ -8,10 +8,10 @@ description = [[
 󰀜 其他模组的适配可以留言（物品的英文+中文+模组的名称）。
 
 󰀏 近期更新：
+2.4.3: 修复拾取堆叠，修复其他已知问题。
 2.4.2: 再次重写贴图渲染，修复其他已知问题。
 2.4.1: 移除贴图逻辑，由游戏原版自动管理。
 2.3.7: 修复棱镜靠背熊。
-2.3.6: 修复错误识别服装栏。
 
 󰀀 图标也抄过来了 嘻嘻。
                     󰀜󰀝󰀀󰀞󰀘󰀁󰀟󰀠󰀡󰀂󰀪󰀕󰀫󰀖󰀛󰀬󰀭󰀮󰀰󰀉󰀚󰀊󰀋󰀌󰀍
@@ -22,7 +22,7 @@ priority = 1                       -- 优先级 默认0 值越大 优先级越�
 
 author = "Breathe"                 -- mod的作者
 
-version = "2.4.2"                  -- mod的版本号
+version = "2.4.3"                  -- mod的版本号
 
 api_version = 10                   -- API版本号
 
@@ -133,6 +133,24 @@ configuration_options = {
         default = true
     },
     {
+        name = "FORCE_FIX_SLOTS",
+        label = "修正分配",
+        hover = "是否强制修正所有物品的所属栏位",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "下都下了，你确定不开启？"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "部分物品会强制修正到我们期望的装备栏。"
+            }
+        },
+        default = true
+    },
+    {
         name = "AUTO_SLOTS_BELLY",
         label = "自动识别服装栏物品",
         hover = "通过物品的名称自动识别该物品是否为服装类",
@@ -182,24 +200,6 @@ configuration_options = {
                 description = "是",
                 data = true,
                 hover = "自动识别未知的模组物品并分配至背包栏。"
-            }
-        },
-        default = true
-    },
-    {
-        name = "FORCE_SLOTS",
-        label = "强制装备栏分配",
-        hover = "是否强制修正所有物品的所属栏位",
-        options = {
-            {
-                description = "否",
-                data = false,
-                hover = "下都下了，你确定不开启？"
-            },
-            {
-                description = "是",
-                data = true,
-                hover = "部分物品会强制修正到我们期望的装备栏。"
             }
         },
         default = true
@@ -326,6 +326,16 @@ if not isZh then
             default = true
         },
         {
+            name = "FORCE_FIX_SLOTS",
+            label = "Force slot assignment",
+            hover = "Force correct slot assignment for all items",
+            options = {
+                { description = "No",  data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true,  hover = "Some items will be forcibly assigned to their intended equipment slots." }
+            },
+            default = true
+        },
+        {
             name = "AUTO_SLOTS_BELLY",
             label = "Auto-detect apparel",
             hover = "Auto-detect apparel items by their attributes",
@@ -365,16 +375,6 @@ if not isZh then
                 { description = "Yes", data = true,  hover = "Display item code info on hover." }
             },
             default = false
-        },
-        {
-            name = "FORCE_SLOTS",
-            label = "Force slot assignment",
-            hover = "Force correct slot assignment for all items",
-            options = {
-                { description = "No",  data = false, hover = "You installed the mod but won't enable it?" },
-                { description = "Yes", data = true,  hover = "Some items will be forcibly assigned to their intended equipment slots." }
-            },
-            default = true
         },
         { name = "", label = "Legion-棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {

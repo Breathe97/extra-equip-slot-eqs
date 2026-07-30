@@ -10,7 +10,7 @@ local AUTO_SLOTS_BELLY = GetModConfigData("AUTO_SLOTS_BELLY")
 local AUTO_SLOTS_NECK = GetModConfigData("AUTO_SLOTS_NECK")
 local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
 
-local FORCE_SLOTS = GetModConfigData("FORCE_SLOTS")
+local FORCE_FIX_SLOTS = GetModConfigData("FORCE_FIX_SLOTS")
 
 local HOVER_ITEM_CODE = GetModConfigData("HOVER_ITEM_CODE")
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
@@ -207,7 +207,7 @@ local function InitPrefab()
         local prefab = inst.prefab                             -- 物品名称
 
         -- 强制装备栏分配
-        if FORCE_SLOTS then
+        if FORCE_FIX_SLOTS then
             -- 物品需要强制保留在头盔栏
             if FORCE_SYMBOL_HEAD[prefab] then
                 inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.HEAD -- 分配到头盔栏
