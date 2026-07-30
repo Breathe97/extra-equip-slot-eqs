@@ -221,14 +221,14 @@ local function InitPrefab()
             end
 
             -- 物品需要强制保留在服装栏
-            if GLOBAL.EQUIPSLOTS.BELLY and FORCE_SYMBOL_BELLY[prefab] then
-                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY -- 分配到服装栏
+            if FORCE_SYMBOL_BELLY[prefab] then
+                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.BODY -- 分配到服装栏
                 return
             end
 
             -- 物品需要强制保留在护符栏
-            if GLOBAL.EQUIPSLOTS.NECK and FORCE_SYMBOL_NECK[prefab] then
-                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK -- 分配到服装栏
+            if FORCE_SYMBOL_NECK[prefab] then
+                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BODY -- 分配到服装栏
                 return
             end
         end
@@ -716,13 +716,18 @@ local function RepairExtra()
     end
 
     -- 开启帽子/服装/护符/背包栏后的修复
-    if GLOBAL.EQUIPSLOTS.HAT or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
+    if GLOBAL.EQUIPSLOTS.WAIST or GLOBAL.EQUIPSLOTS.HAT or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
         -- 重写贴图渲染逻辑
         AddPlayerPostInit(function(player)
             if not IsServer then return end -- 客户端不执行
 
             -- 获取玩家当前装备的物品
             local function GetPlayerEquippedItem(slot)
+                if slot == 'hands' then
+                    local hands_item = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.HANDS)
+                    local waist_item = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.WAIST)
+                    return hands_item or waist_item or nil
+                end
                 if slot == 'head' then
                     local head_item = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.HEAD)
                     local hat_item  = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.HAT)
@@ -783,9 +788,14 @@ local function RepairExtra()
             local function RefreshEquipOverrides(_, data)
                 if not data or not data.eslot then return end
                 local eslot = data.eslot
+                local is_hands = eslot == GLOBAL.EQUIPSLOTS.HANDS or eslot == GLOBAL.EQUIPSLOTS.WAIST
                 local is_head = eslot == GLOBAL.EQUIPSLOTS.HEAD or eslot == GLOBAL.EQUIPSLOTS.HAT
                 local is_body = eslot == GLOBAL.EQUIPSLOTS.BODY or eslot == GLOBAL.EQUIPSLOTS.BELLY or eslot == GLOBAL.EQUIPSLOTS.NECK or eslot == GLOBAL.EQUIPSLOTS.BACK
 
+                -- 渲染手部
+                if is_hands then
+                    Reequip("hands")
+                end
                 -- 渲染头部
                 if is_head then
                     Reequip("head")
