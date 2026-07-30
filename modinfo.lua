@@ -187,6 +187,24 @@ configuration_options = {
         default = true
     },
     {
+        name = "FORCE_SLOTS",
+        label = "强制装备栏分配",
+        hover = "是否强制修正所有物品的所属栏位",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "下都下了，你确定不开启？"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "部分物品会强制修正到我们期望的装备栏。"
+            }
+        },
+        default = true
+    },
+    {
         name = "",
         label = "其他配置 (推荐默认)",
         hover = "",
@@ -211,31 +229,6 @@ configuration_options = {
         },
         default = false
     },
-    {
-        name = "",
-        label = "Uncompromising-永不妥协",
-        hover = "",
-        options = { { description = "", data = 0 } },
-        default = 0
-    },
-    {
-        name = "MOD_YBTX_BELLY",
-        label = "强制服装栏",
-        hover = "将 透气背心、松软背心、清凉夏装、花衬衫、雨衣 强制识别到服装栏",
-        options = {
-            {
-                description = "否",
-                data = false,
-                hover = "保持自动分配"
-            },
-            {
-                description = "是",
-                data = true,
-                hover = "强制装备在服装栏。"
-            }
-        },
-        default = true
-    },
     { name = "", label = "Legion-棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
     {
         name = "MOD_LJ_ZGF",
@@ -251,6 +244,25 @@ configuration_options = {
                 description = "是",
                 data = true,
                 hover = "强制装备在身体栏。"
+            }
+        },
+        default = true
+    },
+    { name = "", label = "风幻龙Syelza", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+    {
+        name = "MOD_FHL_HSF",
+        label = "护身符",
+        hover = "是否保留该物品在头部",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "该物品会装备在护符栏，原有的UI格子不能对齐，谨慎开启。"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "保持在头盔栏。"
             }
         },
         default = true
@@ -354,14 +366,13 @@ if not isZh then
             },
             default = false
         },
-        { name = "", label = "Uncompromising Mode", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
-            name = "MOD_YBTX_BELLY",
-            label = "Force apparel slot",
-            hover = "Force Breezy Vest, Puffy Vest, Summer Frest, Hawaiian Shirt and Rain Coat into the apparel slot.",
+            name = "FORCE_SLOTS",
+            label = "Force slot assignment",
+            hover = "Force correct slot assignment for all items",
             options = {
-                { description = "No",  data = false, hover = "Keep auto-assignment for these items." },
-                { description = "Yes", data = true,  hover = "Force these items into the apparel slot." }
+                { description = "No",  data = false, hover = "You installed the mod but won't enable it?" },
+                { description = "Yes", data = true,  hover = "Some items will be forcibly assigned to their intended equipment slots." }
             },
             default = true
         },
@@ -373,6 +384,25 @@ if not isZh then
             options = {
                 { description = "No",  data = false, hover = "This item will be equipped in the backpack slot, may unbalance gameplay, enable with caution." },
                 { description = "Yes", data = true,  hover = "Force this item into the body slot." }
+            },
+            default = true
+        },
+        { name = "", label = "风幻龙Syelza", hover = "", options = { { description = "", data = 0 } }, default = 0 },
+        {
+            name = "MOD_FHL_HSF",
+            label = "Amulet of Wind Dragon",
+            hover = "Keep this item in the head slot",
+            options = {
+                {
+                    description = "No",
+                    data = false,
+                    hover = "This item will be equipped in the amulet slot. The original UI slot may not align properly, enable with caution."
+                },
+                {
+                    description = "Yes",
+                    data = true,
+                    hover = "Keep it in the head slot."
+                }
             },
             default = true
         }

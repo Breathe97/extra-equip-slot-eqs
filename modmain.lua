@@ -10,9 +10,11 @@ local AUTO_SLOTS_BELLY = GetModConfigData("AUTO_SLOTS_BELLY")
 local AUTO_SLOTS_NECK = GetModConfigData("AUTO_SLOTS_NECK")
 local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
 
+local FORCE_SLOTS = GetModConfigData("FORCE_SLOTS")
+
 local HOVER_ITEM_CODE = GetModConfigData("HOVER_ITEM_CODE")
-local MOD_YBTX_BELLY = GetModConfigData("MOD_YBTX_BELLY")
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
+local MOD_FHL_HSF = GetModConfigData("MOD_FHL_HSF")
 
 local FIX_SYMBOL_BUILD = require("fix_symbol_build")     -- 一些物品的build和Symbol不正常
 
@@ -25,22 +27,17 @@ local SYMBOL_BACK = require("symbol_back")               -- 定义背包栏物�
 local FORCE_SYMBOL_HEAD = require("force_symbol_head")   -- 定义强制头盔栏物品
 local FORCE_SYMBOL_BODY = require("force_symbol_body")   -- 定义强制身体栏物品
 local FORCE_SYMBOL_BELLY = require("force_symbol_belly") -- 定义强制服装栏物品
+local FORCE_SYMBOL_NECK = require("force_symbol_neck")   -- 定义强制护符栏物品
 
 -- GLOBAL.TheNet:SystemMessage("prefab: " .. prefab)-- 调试用
 
 -- 校准 symbol表 根据设置中生成最终的物品表 后续再根据该表进行装备栏的分配
 local function CalibrationSymBol()
-    -- 如果不开启强制服装栏 清空 FORCE_SYMBOL_BELLY 表
-    if MOD_YBTX_BELLY == false then
-        FORCE_SYMBOL_BELLY['trunkvest_summer'] = nil
-        FORCE_SYMBOL_BELLY['trunkvest_winter'] = nil
-        FORCE_SYMBOL_BELLY['reflectivevest'] = nil
-        FORCE_SYMBOL_BELLY['hawaiianshirt'] = nil
-        FORCE_SYMBOL_BELLY['raincoat'] = nil
-    end
-    -- 这里就是取true 调整的是 FORCE_SYMBOL_BODY 表
     if MOD_LJ_ZGF == false then
         FORCE_SYMBOL_BODY['siving_suit_gold'] = nil
+    end
+    if MOD_FHL_HSF == true then
+        FORCE_SYMBOL_NECK['fhl_hsf'] = nil
     end
 end
 CalibrationSymBol()
@@ -209,22 +206,31 @@ local function InitPrefab()
         local equipslot = inst.components.equippable.equipslot -- 物品原所属栏
         local prefab = inst.prefab                             -- 物品名称
 
-        -- 物品需要强制保留在头盔栏
-        if FORCE_SYMBOL_HEAD[prefab] then
-            inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.HEAD -- 分配到头盔栏
-            return
-        end
+        -- 强制装备栏分配
+        if FORCE_SLOTS then
+            -- 物品需要强制保留在头盔栏
+            if FORCE_SYMBOL_HEAD[prefab] then
+                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.HEAD -- 分配到头盔栏
+                return
+            end
 
-        -- 物品需要强制保留在身体栏
-        if FORCE_SYMBOL_BODY[prefab] then
-            inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BODY -- 分配到身体栏
-            return
-        end
+            -- 物品需要强制保留在身体栏
+            if FORCE_SYMBOL_BODY[prefab] then
+                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BODY -- 分配到身体栏
+                return
+            end
 
-        -- 物品需要强制保留在服装栏
-        if GLOBAL.EQUIPSLOTS.BELLY and FORCE_SYMBOL_BELLY[prefab] then
-            inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY -- 分配到服装栏
-            return
+            -- 物品需要强制保留在服装栏
+            if GLOBAL.EQUIPSLOTS.BELLY and FORCE_SYMBOL_BELLY[prefab] then
+                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.BELLY -- 分配到服装栏
+                return
+            end
+
+            -- 物品需要强制保留在护符栏
+            if GLOBAL.EQUIPSLOTS.NECK and FORCE_SYMBOL_NECK[prefab] then
+                inst.components.equippable.equipslot = GLOBAL.EQUIPSLOTS.NECK -- 分配到服装栏
+                return
+            end
         end
 
         -- 手持
@@ -547,12 +553,10 @@ local function RepairExtra()
     -- 开启服装/护符/背包栏后的修复
     if GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
         -- 原来只有一个body栏 现在扩展为了4个
-        local body_slots = {
-            GLOBAL.EQUIPSLOTS.BODY,
-            GLOBAL.EQUIPSLOTS.BELLY,
-            GLOBAL.EQUIPSLOTS.NECK,
-            GLOBAL.EQUIPSLOTS.BACK,
-        }
+        local body_slots = { GLOBAL.EQUIPSLOTS.BODY }
+        if GLOBAL.EQUIPSLOTS.BELLY then table.insert(body_slots, GLOBAL.EQUIPSLOTS.BELLY) end
+        if GLOBAL.EQUIPSLOTS.NECK then table.insert(body_slots, GLOBAL.EQUIPSLOTS.NECK) end
+        if GLOBAL.EQUIPSLOTS.BACK then table.insert(body_slots, GLOBAL.EQUIPSLOTS.BACK) end
 
         -- 服务器端 GetOverflowContainer 修复：为新增装备槽提供正确的物品堆叠容器识别
         AddComponentPostInit("inventory", function(comp)
