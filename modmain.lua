@@ -794,16 +794,22 @@ local function RepairExtra()
 
                 -- 渲染手部
                 if is_hands then
-                    Reequip("hands")
+                    if GLOBAL.EQUIPSLOTS.WAIST then
+                        Reequip("hands")
+                    end
                 end
                 -- 渲染头部
                 if is_head then
-                    Reequip("head")
+                    if GLOBAL.EQUIPSLOTS.HAT then
+                        Reequip("head")
+                    end
                 end
                 -- 渲染身体/背包
                 if is_body then
-                    Reequip("body")
-                    SetBackSymbol()
+                    if GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
+                        Reequip("body")
+                        SetBackSymbol() -- 不需要重新装备 只需要纠正贴图
+                    end
                 end
             end
 
