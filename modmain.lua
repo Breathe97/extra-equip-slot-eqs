@@ -553,10 +553,11 @@ local function RepairExtra()
     -- 开启服装/护符/背包栏后的修复
     if GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
         -- 原来只有一个body栏 现在扩展为了4个
-        local body_slots = { GLOBAL.EQUIPSLOTS.BODY }
+        local body_slots = {}
+        if GLOBAL.EQUIPSLOTS.BACK then table.insert(body_slots, GLOBAL.EQUIPSLOTS.BACK) end
+        if GLOBAL.EQUIPSLOTS.BODY then table.insert(body_slots, GLOBAL.EQUIPSLOTS.BODY) end
         if GLOBAL.EQUIPSLOTS.BELLY then table.insert(body_slots, GLOBAL.EQUIPSLOTS.BELLY) end
         if GLOBAL.EQUIPSLOTS.NECK then table.insert(body_slots, GLOBAL.EQUIPSLOTS.NECK) end
-        if GLOBAL.EQUIPSLOTS.BACK then table.insert(body_slots, GLOBAL.EQUIPSLOTS.BACK) end
 
         -- 服务器端 GetOverflowContainer 修复：为新增装备槽提供正确的物品堆叠容器识别
         AddComponentPostInit("inventory", function(comp)
@@ -808,7 +809,8 @@ local function RepairExtra()
                 if is_body then
                     if GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
                         Reequip("body")
-                        SetBackSymbol() -- 不需要重新装备 只需要纠正贴图
+                        Reequip("back")
+                        SetBackSymbol()
                     end
                 end
             end
