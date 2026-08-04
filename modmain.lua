@@ -752,9 +752,9 @@ local function RepairExtra()
                 local item = GetPlayerEquippedItem(slot) -- 头部物品
                 if item == nil then return end
                 -- 重新装备一次触发原版渲染
-                if item.components.equippable and item.components.equippable.onunequipfn then
-                    item.components.equippable.onunequipfn(item, player)
-                end
+                -- if item.components.equippable and item.components.equippable.onunequipfn then
+                --     item.components.equippable.onunequipfn(item, player)
+                -- end
                 if item.components.equippable and item.components.equippable.onequipfn then
                     item.components.equippable.onequipfn(item, player)
                 end
@@ -789,6 +789,7 @@ local function RepairExtra()
             local function RefreshEquipOverrides(_, data)
                 if not data or not data.eslot then return end
                 local eslot = data.eslot
+
                 local is_hands = eslot == GLOBAL.EQUIPSLOTS.HANDS or eslot == GLOBAL.EQUIPSLOTS.WAIST
                 local is_head = eslot == GLOBAL.EQUIPSLOTS.HEAD or eslot == GLOBAL.EQUIPSLOTS.HAT
                 local is_body = eslot == GLOBAL.EQUIPSLOTS.BODY or eslot == GLOBAL.EQUIPSLOTS.BELLY or eslot == GLOBAL.EQUIPSLOTS.NECK or eslot == GLOBAL.EQUIPSLOTS.BACK
