@@ -809,7 +809,6 @@ local function RepairExtra()
                 if is_body then
                     if GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
                         Reequip("body")
-                        Reequip("back")
                         SetBackSymbol()
                     end
                 end
