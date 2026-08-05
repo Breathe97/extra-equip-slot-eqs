@@ -13,6 +13,8 @@ local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
 local FORCE_FIX_SLOTS = GetModConfigData("FORCE_FIX_SLOTS")
 
 local HOVER_ITEM_CODE = GetModConfigData("HOVER_ITEM_CODE")
+local RERENDER_TEXTURE = GetModConfigData("RERENDER_TEXTURE")
+
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
 local MOD_FHL_HSF = GetModConfigData("MOD_FHL_HSF")
 
@@ -717,7 +719,9 @@ local function RepairExtra()
     end
 
     -- 开启帽子/服装/护符/背包栏后的修复
+    -- RERENDER_TEXTURE 开关：控制是否自动重新渲染角色贴图（默认开启，~= false 兼容未配置的旧存档）
     if GLOBAL.EQUIPSLOTS.WAIST or GLOBAL.EQUIPSLOTS.HAT or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
+        if RERENDER_TEXTURE == false then return end -- 关闭了重新渲染
         -- 重写贴图渲染逻辑
         AddPlayerPostInit(function(player)
             if not IsServer then return end -- 客户端不执行
@@ -749,12 +753,13 @@ local function RepairExtra()
 
             -- 重新装备一次触发原版渲染
             local function Reequip(slot)
-                local item = GetPlayerEquippedItem(slot) -- 头部物品
+                local item = GetPlayerEquippedItem(slot)          -- 头部物品
                 if item == nil then return end
+                if item.prefab == "devourer_pack" then return end -- 吞噬背包有自己的渲染逻辑
                 -- 重新装备一次触发原版渲染
-                -- if item.components.equippable and item.components.equippable.onunequipfn then
-                --     item.components.equippable.onunequipfn(item, player)
-                -- end
+                if item.components.equippable and item.components.equippable.onunequipfn then
+                    item.components.equippable.onunequipfn(item, player)
+                end
                 if item.components.equippable and item.components.equippable.onequipfn then
                     item.components.equippable.onequipfn(item, player)
                 end

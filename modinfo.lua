@@ -8,10 +8,10 @@ description = [[
 󰀜 其他模组的适配可以留言（物品的英文+中文+模组的名称）。
 
 󰀏 近期更新：
+2.4.7: 修复重复装备物品带来的异常，增加重新渲染开关。
 2.4.6: 优化背包多次打开问题，兼容吞噬背包。
 2.4.5: 优先打开背包容器。
 2.4.4: 简化不必要的贴图渲染。
-2.4.3: 修复拾取堆叠，修复其他已知问题。
 
 󰀀 图标也抄过来了 嘻嘻。
                     󰀜󰀝󰀀󰀞󰀘󰀁󰀟󰀠󰀡󰀂󰀪󰀕󰀫󰀖󰀛󰀬󰀭󰀮󰀰󰀉󰀚󰀊󰀋󰀌󰀍
@@ -22,7 +22,7 @@ priority = 1                       -- 优先级 默认0 值越大 优先级越�
 
 author = "Breathe"                 -- mod的作者
 
-version = "2.4.6"                  -- mod的版本号
+version = "2.4.7"                  -- mod的版本号
 
 api_version = 10                   -- API版本号
 
@@ -229,6 +229,24 @@ configuration_options = {
         },
         default = false
     },
+    {
+        name = "RERENDER_TEXTURE",
+        label = "重新渲染贴图",
+        hover = "开启后装备/卸载物品时自动重新渲染角色贴图。",
+        options = {
+            {
+                description = "否",
+                data = false,
+                hover = "关闭自动重新渲染贴图"
+            },
+            {
+                description = "是",
+                data = true,
+                hover = "装备/卸载物品时自动重新渲染角色贴图。"
+            }
+        },
+        default = true
+    },
     { name = "", label = "Legion-棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
     {
         name = "MOD_LJ_ZGF",
@@ -375,6 +393,16 @@ if not isZh then
                 { description = "Yes", data = true,  hover = "Display item code info on hover." }
             },
             default = false
+        },
+        {
+            name = "RERENDER_TEXTURE",
+            label = "Re-render textures",
+            hover = "Automatically re-render the character's textures when equipping/unequipping items.",
+            options = {
+                { description = "No",  data = false, hover = "Disable automatic texture re-rendering." },
+                { description = "Yes", data = true,  hover = "Automatically re-render the character's textures when equipping/unequipping items." }
+            },
+            default = true
         },
         { name = "", label = "Legion-棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
