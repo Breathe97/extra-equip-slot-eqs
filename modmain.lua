@@ -18,8 +18,6 @@ local RERENDER_TEXTURE = GetModConfigData("RERENDER_TEXTURE")
 local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
 local MOD_FHL_HSF = GetModConfigData("MOD_FHL_HSF")
 
-local FIX_SYMBOL_BUILD = require("fix_symbol_build")     -- 一些物品的build和Symbol不正常
-
 local SYMBOL_HAT = require("symbol_hat")                 -- 定义头饰栏物品
 local SYMBOL_BELLY = require("symbol_belly")             -- 定义服装栏物品
 local SYMBOL_WAIST = require("symbol_waist")             -- 定义腰包栏物品
@@ -718,112 +716,6 @@ local function RepairExtra()
         end)
     end
 
-    -- 开启帽子/服装/护符/背包栏后的修复
-    -- RERENDER_TEXTURE 开关：控制是否自动重新渲染角色贴图（默认开启，~= false 兼容未配置的旧存档）
-    if GLOBAL.EQUIPSLOTS.WAIST or GLOBAL.EQUIPSLOTS.HAT or GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
-        if RERENDER_TEXTURE == false then return end -- 关闭了重新渲染
-        -- 重写贴图渲染逻辑
-        AddPlayerPostInit(function(player)
-            if not IsServer then return end -- 客户端不执行
-
-            -- 获取玩家当前装备的物品
-            local function GetPlayerEquippedItem(slot)
-                if slot == 'hands' then
-                    local hands_item = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.HANDS)
-                    local waist_item = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.WAIST)
-                    return hands_item or waist_item or nil
-                end
-                if slot == 'head' then
-                    local head_item = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.HEAD)
-                    local hat_item  = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.HAT)
-                    return head_item or hat_item or nil
-                end
-                if slot == 'body' then
-                    local body_item  = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BODY)
-                    local belly_item = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BELLY)
-                    local neck_item  = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.NECK)
-                    return body_item or belly_item or neck_item or nil
-                end
-                if slot == 'back' then
-                    local back_item = player.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
-                    return back_item or nil
-                end
-                return nil
-            end
-
-            -- 重新装备一次触发原版渲染
-            local function Reequip(slot)
-                local item = GetPlayerEquippedItem(slot)          -- 头部物品
-                if item == nil then return end
-                if item.prefab == "devourer_pack" then return end -- 吞噬背包有自己的渲染逻辑
-                -- 重新装备一次触发原版渲染
-                if item.components.equippable and item.components.equippable.onunequipfn then
-                    item.components.equippable.onunequipfn(item, player)
-                end
-                if item.components.equippable and item.components.equippable.onequipfn then
-                    item.components.equippable.onequipfn(item, player)
-                end
-            end
-
-            -- 设置背包栏贴图
-            local function SetBackSymbol()
-                player.AnimState:ClearOverrideSymbol("swap_body_tall")
-                local item = GetPlayerEquippedItem("back") -- 背包栏物品
-                if item == nil then return end
-
-                local oldsymbol  = "swap_body_tall"
-                local newsymbol  = "swap_body"
-
-                local build      = item.AnimState:GetBuild()
-                local skin_build = item:GetSkinBuild()
-
-                if skin_build and skin_build ~= '' then
-                    player.AnimState:OverrideItemSkinSymbol(oldsymbol, skin_build, newsymbol, item.GUID, build) -- 设置皮肤物品贴图
-                else
-                    -- 部分物品的build、symbol获取不准确
-                    local fix_item = FIX_SYMBOL_BUILD[item.prefab]
-                    if fix_item then
-                        build = fix_item.build
-                        newsymbol = fix_item.symbol
-                    end
-                    player.AnimState:OverrideSymbol(oldsymbol, build, newsymbol) -- 设置原版物品贴图
-                end
-            end
-
-            -- 重新渲染人物贴图
-            local function RefreshEquipOverrides(_, data)
-                if not data or not data.eslot then return end
-                local eslot = data.eslot
-
-                local is_hands = eslot == GLOBAL.EQUIPSLOTS.HANDS or eslot == GLOBAL.EQUIPSLOTS.WAIST
-                local is_head = eslot == GLOBAL.EQUIPSLOTS.HEAD or eslot == GLOBAL.EQUIPSLOTS.HAT
-                local is_body = eslot == GLOBAL.EQUIPSLOTS.BODY or eslot == GLOBAL.EQUIPSLOTS.BELLY or eslot == GLOBAL.EQUIPSLOTS.NECK or eslot == GLOBAL.EQUIPSLOTS.BACK
-
-                -- 渲染手部
-                if is_hands then
-                    if GLOBAL.EQUIPSLOTS.WAIST then
-                        Reequip("hands")
-                    end
-                end
-                -- 渲染头部
-                if is_head then
-                    if GLOBAL.EQUIPSLOTS.HAT then
-                        Reequip("head")
-                    end
-                end
-                -- 渲染身体/背包
-                if is_body then
-                    if GLOBAL.EQUIPSLOTS.BELLY or GLOBAL.EQUIPSLOTS.NECK or GLOBAL.EQUIPSLOTS.BACK then
-                        Reequip("body")
-                        SetBackSymbol()
-                    end
-                end
-            end
-
-            player:ListenForEvent("equip", RefreshEquipOverrides)   -- 装备
-            player:ListenForEvent("unequip", RefreshEquipOverrides) -- 卸载
-        end)
-    end
 end
 RepairExtra()
 
