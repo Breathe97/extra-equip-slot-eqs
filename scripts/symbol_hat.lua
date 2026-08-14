@@ -40,7 +40,6 @@ return {
     candy_hat = true,            -- 糖果帽（万圣节）
     halloween_hat = true,        -- 万圣节帽
     winter_hat = true,           -- 冬季帽子（活动）
-    hivehat = true,              -- 蜂王冠（蜂后）
     batnosehat = true,           -- 牛奶帽
     inspectacleshat = true,      -- 检查专用镜
     mermhat = true,              -- 聪明的伪装
