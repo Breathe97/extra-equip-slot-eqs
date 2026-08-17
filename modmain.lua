@@ -306,6 +306,48 @@ InitPrefab()
 
 -- 因为部分物品调整装备栏带来的修复
 local function RepairExtra()
+    -- 开启头饰栏后的修复
+    if GLOBAL.EQUIPSLOTS.HAT then
+        -- 修复启迪之冠容器 UI 位置
+        -- 原版 type=hand_inv 的容器 UI 写死跟随手持栏（hand_inv widget）
+        -- 启迪之冠被分配到头饰栏后，UI 仍显示在手持栏上方，这里改为跟随头饰栏
+        local function FixAlterguardianhatContainer()
+            local params = GLOBAL.require("containers").params
+            local setup = params.alterguardianhat
+            if setup == nil or setup.widget == nil then
+                return
+            end
+
+            local base_pos = setup.widget.pos
+            setup.widget.posfn = function(container, doer)
+                local inv = doer ~= nil and doer.HUD ~= nil and doer.HUD.controls ~= nil and doer.HUD.controls.inv or nil
+                if inv == nil or inv.equip == nil or inv.hand_inv == nil then
+                    return base_pos
+                end
+
+                -- 只在启迪之冠装备在头饰栏时调整位置（手持栏时保持原版位置）
+                if doer.replica == nil or doer.replica.inventory == nil
+                    or doer.replica.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.HAT) ~= container then
+                    return base_pos
+                end
+
+                local hat = inv.equip[GLOBAL.EQUIPSLOTS.HAT]
+                if hat == nil then
+                    return base_pos
+                end
+
+                -- hand_inv 与 toprow 都挂在 root 下（无缩放），局部坐标可直接相减
+                -- hand_inv 跟随手持栏，容器 UI 相对 hand_inv 定位（hand_inv 局部缩放固定 1.5）
+                -- 世界差 = 局部差 × base_scale，除回 hand_inv 局部坐标时 base_scale 约掉，只需除 1.5
+                -- 注意：原版 base_pos.x(106) 是给"手持栏"的右偏移，套到 HAT 槽会多偏 2 个槽位（正好落到腰包栏）
+                -- 所以这里直接对齐 HAT 槽中心，不再加 base_pos.x
+                local toprow = inv.toprow
+                local dx = (hat:GetPosition().x + (toprow ~= nil and toprow:GetPosition().x or 0) - inv.hand_inv:GetPosition().x) / 1.5
+                return GLOBAL.Vector3(dx, base_pos.y, 0)
+            end
+        end
+        FixAlterguardianhatContainer()
+    end
     -- 开启服装栏后的修复 参考于 2950481491
     if GLOBAL.EQUIPSLOTS.BELLY then
         -- 当你给“寄居蟹隐士”一件外套时，她会尝试使用旧的装备槽。让我们也用新的.
@@ -715,7 +757,6 @@ local function RepairExtra()
             end
         end)
     end
-
 end
 RepairExtra()
 

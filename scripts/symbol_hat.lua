@@ -1,6 +1,7 @@
 -- 定义头饰栏物品（非护甲头部物品）
 return {
     -- 原版物品
+    alterguardianhat = true,     -- 启迪之冠
     flowerhat = true,            -- 花环
     rainhat = true,              -- 雨帽
     beefalohat = true,           -- 牛帽
@@ -54,23 +55,23 @@ return {
     salty_doghat = true,         -- 咸狗帽
 
     -- 模组物品
-    aerodynamichat = true,               -- 岛屿冒险-空气动力学帽
-    double_umbrellahat = true,           -- 岛屿冒险-双伞帽
-    brainjellyhat = true,                -- 岛屿冒险-智慧帽
-    bathat = true,                       -- 岛屿冒险-蝙蝠帽
-    antmaskhat = true,                   -- 岛屿冒险-蚂蚁面具
-    pigcrownhat = true,                  -- 岛屿冒险-猪王冠
-    pithhat = true,                      -- 岛屿冒险-通草帽
-    bandithat = true,                    -- 岛屿冒险-土匪帽
-    candlehat = true,                    -- 岛屿冒险-蜡烛帽
-    thunderhat = true,                   -- 岛屿冒险-雷电帽
-    metalplatehat = true,                -- 岛屿冒险-金属板头盔
-    disguisahat = true,                  -- 岛屿冒险-伪装帽
-    nutrientsgoggles_bonehat = true,     -- 岛屿冒险-营养护目镜·骨版
-    piratehat = true,                    -- 岛屿冒险-海盗帽
-    gashat = true,                       -- 岛屿冒险-防毒面具帽
-    captainhat = true,                   -- 岛屿冒险-船长帽
-    snakeskinhat = true,                 -- 岛屿冒险-蛇皮帽
-    shark_teethhat = true,               -- 岛屿冒险-鲨齿帽
-    woodlegshat = true,                  -- 岛屿冒险-木腿帽
+    aerodynamichat = true,           -- 岛屿冒险-空气动力学帽
+    double_umbrellahat = true,       -- 岛屿冒险-双伞帽
+    brainjellyhat = true,            -- 岛屿冒险-智慧帽
+    bathat = true,                   -- 岛屿冒险-蝙蝠帽
+    antmaskhat = true,               -- 岛屿冒险-蚂蚁面具
+    pigcrownhat = true,              -- 岛屿冒险-猪王冠
+    pithhat = true,                  -- 岛屿冒险-通草帽
+    bandithat = true,                -- 岛屿冒险-土匪帽
+    candlehat = true,                -- 岛屿冒险-蜡烛帽
+    thunderhat = true,               -- 岛屿冒险-雷电帽
+    metalplatehat = true,            -- 岛屿冒险-金属板头盔
+    disguisahat = true,              -- 岛屿冒险-伪装帽
+    nutrientsgoggles_bonehat = true, -- 岛屿冒险-营养护目镜·骨版
+    piratehat = true,                -- 岛屿冒险-海盗帽
+    gashat = true,                   -- 岛屿冒险-防毒面具帽
+    captainhat = true,               -- 岛屿冒险-船长帽
+    snakeskinhat = true,             -- 岛屿冒险-蛇皮帽
+    shark_teethhat = true,           -- 岛屿冒险-鲨齿帽
+    woodlegshat = true,              -- 岛屿冒险-木腿帽
 }
