@@ -348,6 +348,7 @@ local function RepairExtra()
         end
         FixAlterguardianhatContainer()
     end
+
     -- 开启服装栏后的修复 参考于 2950481491
     if GLOBAL.EQUIPSLOTS.BELLY then
         -- 当你给“寄居蟹隐士”一件外套时，她会尝试使用旧的装备槽。让我们也用新的.
@@ -556,6 +557,28 @@ local function RepairExtra()
 
     -- 开启背包栏后的修复
     if GLOBAL.EQUIPSLOTS.BACK then
+        -- 进入世界（下洞穴/上洞穴/重进游戏）时重新打开背包容器
+        -- 原版 OnLoad 用 pairs 恢复装备：子圭釜（BODY）若排在后面，
+        -- 会通过 Container:Open 的同 type 互斥把背包顶掉，导致默认打开子圭釜。
+        -- 这里在玩家进入世界后强制重开背包，互斥逻辑会自动关闭子圭釜。
+        AddSimPostInit(function()
+            if not IsServer then return end -- 客户端不执行
+            GLOBAL.TheWorld:ListenForEvent("ms_playerjoined", function(world, player)
+                if player == nil or player.components.inventory == nil or player.components.health == nil then
+                    return
+                end
+                -- 延迟一帧确保装备恢复与容器状态完全就绪
+                player:DoTaskInTime(0, function(inst)
+                    local backitem = inst.components.inventory:GetEquippedItem(GLOBAL.EQUIPSLOTS.BACK)
+                    if backitem and backitem.components.container then
+                        -- 检查容器是否已关闭，如果关闭则重新打开
+                        if not backitem.components.container:IsOpen() then
+                            backitem.components.container:Open(inst)
+                        end
+                    end
+                end)
+            end)
+        end)
         -- 监听从鬼魂复活事件，重新打开背包容器
         -- 大门/传送阵/肉块雕像复活时，引擎会关闭所有容器，护符复活没有这个问题
         AddPrefabPostInitAny(function(inst)
