@@ -13,9 +13,8 @@ local AUTO_SLOTS_BACK = GetModConfigData("AUTO_SLOTS_BACK")
 local FORCE_FIX_SLOTS = GetModConfigData("FORCE_FIX_SLOTS")
 
 local HOVER_ITEM_CODE = GetModConfigData("HOVER_ITEM_CODE")
-local RERENDER_TEXTURE = GetModConfigData("RERENDER_TEXTURE")
+local DEVOUR_ENABLE = GetModConfigData("DEVOUR_ENABLE")
 
-local MOD_LJ_ZGF = GetModConfigData("MOD_LJ_ZGF")
 local MOD_FHL_HSF = GetModConfigData("MOD_FHL_HSF")
 
 local SYMBOL_HAT = require("symbol_hat")                 -- 定义头饰栏物品
@@ -33,9 +32,6 @@ local FORCE_SYMBOL_NECK = require("force_symbol_neck")   -- 定义强制护符�
 
 -- 校准 symbol表 根据设置中生成最终的物品表 后续再根据该表进行装备栏的分配
 local function CalibrationSymBol()
-    if MOD_LJ_ZGF == false then
-        FORCE_SYMBOL_BODY['siving_suit_gold'] = nil
-    end
     if MOD_FHL_HSF == true then
         FORCE_SYMBOL_NECK['fhl_hsf'] = nil
     end
@@ -176,6 +172,11 @@ local function InitSlot()
                 local waist_x = self.equip[GLOBAL.EQUIPSLOTS.WAIST]:GetPosition().x
                 local compass_y = self.integrated_arrow ~= nil and 80 or 40
                 self.hudcompass:SetPosition(waist_x, compass_y, 0)
+            end
+
+            -- 吞噬垃圾：把"审视自我"头像（装备栏最右侧）改造成吞噬槽（开关关闭时 HookDevourButton 为 nil，需判空）
+            if HookDevourButton ~= nil then
+                HookDevourButton(self)
             end
         end
 
@@ -829,4 +830,174 @@ end
 
 if HOVER_ITEM_CODE then
     HoverItemCode()
+end
+
+-- ============================================================
+-- 吞噬垃圾功能：把"审视自我"头像（装备栏最右侧）改造成吞噬槽
+-- 拿起任意物品拖到头像上会提示"吞噬"，左键点击即可销毁该物品
+-- 注意：联机时销毁由服务器权威执行，需要服务器也启用本 mod
+-- ============================================================
+if DEVOUR_ENABLE then
+    local DEVOUR_RPC_NAMESPACE = "extra_equip_slot_eqs" -- RPC 命名空间（客户端/服务器一致）
+    local DEVOUR_RPC_NAME = "devour" -- RPC 名称
+    local DEVOUR_LOCALE = GLOBAL.LOC ~= nil and GLOBAL.LOC.GetLocaleCode() or "en" -- 当前语言代码（locale 只在 modinfo 环境注入，modmain 需用 GLOBAL.LOC）
+    local DEVOUR_LABEL = (DEVOUR_LOCALE == "zh" or DEVOUR_LOCALE == "zht" or DEVOUR_LOCALE == "zhr") and "吞噬" or "Devour" -- 悬停提示文字（中英）
+    local DEVOUR_PROTECT_LABEL = (DEVOUR_LOCALE == "zh" or DEVOUR_LOCALE == "zht" or DEVOUR_LOCALE == "zhr") and "受保护，不可吞噬" or "Protected, cannot devour" -- 受保护提示文字（中英）
+
+    -- 受保护物品：DST 官方用 "irreplaceable" tag 标记不可替代的关键物品
+    -- （天体宝球 moonrockseed、远古钥匙 atrium_key、眼骨 chester_eyebone 等都带，
+    --   这类物品不能跨世界携带、无法重新获得，绝不能误销毁）
+    local function IsDevourProtected(item)
+        if item == nil then
+            return true
+        end
+        return item:HasTag("irreplaceable")
+    end
+
+    -- 服务器端销毁：只销毁玩家当前拿在光标上的 active 物品
+    local function DevourItemServer(player, item)
+        print("[DEVOUR] server destroy, player=", tostring(player), " item=", tostring(item))
+        if player == nil or player.components == nil or player.components.inventory == nil then
+            print("[DEVOUR]   skip: player/inventory nil")
+            return
+        end
+        if item == nil or not item:IsValid() or item.components.inventoryitem == nil then
+            print("[DEVOUR]   skip: item invalid, IsValid=", tostring(item ~= nil and item:IsValid()), " invitem=", tostring(item ~= nil and item.components ~= nil and item.components.inventoryitem ~= nil))
+            return
+        end
+        local active = player.components.inventory:GetActiveItem()
+        if active ~= item then
+            print("[DEVOUR]   skip: active~=item, active=", tostring(active))
+            return
+        end
+        -- 保护：不可再生/稀有物品拒绝销毁（避免误销毁）
+        if IsDevourProtected(item) then
+            print("[DEVOUR]   skip: protected item")
+            if player.components.talker ~= nil then
+                player.components.talker:Say(DEVOUR_PROTECT_LABEL)
+            end
+            return
+        end
+        -- 从背包/active 中移除整个物品实体，然后销毁（服务器权威，客户端会自动清空光标）
+        player.components.inventory:RemoveItem(item, true)
+        print("[DEVOUR]   RemoveItem done, item still valid=", tostring(item:IsValid()))
+        if item:IsValid() then
+            item:Remove()
+            print("[DEVOUR]   item:Remove done")
+        end
+    end
+
+    -- 注册服务器 RPC 处理器（客户端也需注册以生成发送用的 id 表）
+    -- 直接销毁发送者玩家当前持有的 active 物品（不传 GUID，避免跨端实体解析问题）
+    GLOBAL.AddModRPCHandler(DEVOUR_RPC_NAMESPACE, DEVOUR_RPC_NAME, function(player)
+        print("[DEVOUR] rpc handler received from ", tostring(player))
+        if not GLOBAL.TheWorld.ismastersim then
+            print("[DEVOUR]   rpc handler not master, return")
+            return
+        end
+        if player == nil or player.components == nil or player.components.inventory == nil then
+            return
+        end
+        DevourItemServer(player, player.components.inventory:GetActiveItem())
+    end)
+
+    -- 客户端触发吞噬：服务器（房主）直接处理，远端客户端走 RPC
+    local function DevourItem(player, item)
+        print("[DEVOUR] DevourItem item=", item ~= nil and item.prefab or "nil", " guid=", item ~= nil and tostring(item.GUID) or "nil")
+        if GLOBAL.TheWorld.ismastersim then
+            print("[DEVOUR]   local master branch")
+            DevourItemServer(player, item)
+        else
+            print("[DEVOUR]   RPC branch")
+            local rpc = GLOBAL.GetModRPC(DEVOUR_RPC_NAMESPACE, DEVOUR_RPC_NAME)
+            print("[DEVOUR]   rpc table=", tostring(rpc))
+            if rpc ~= nil then
+                GLOBAL.SendModRPCToServer(rpc)
+            else
+                print("[DEVOUR]   !! rpc table nil：客户端未注册 RPC，服务器可能未启用本 mod")
+            end
+        end
+    end
+
+    -- 包装"审视自我"头像按钮：持有物品时显示"吞噬"提示，左键点击销毁
+    -- 注意：必须是全局函数，因为 RebuildExtraSlots（文件中段）在运行时通过全局查找调用它
+    function HookDevourButton(inv)
+        local btn = inv.inspectcontrol
+        print("[DEVOUR] HookDevourButton, btn=", tostring(btn), " hooked=", tostring(btn ~= nil and btn.__devour_hooked))
+        if btn == nil or btn.__devour_hooked then
+            return
+        end
+        btn.__devour_hooked = true
+
+        -- 获取当前拿在光标上的物品（客户端副本）
+        local function GetActiveItem()
+            local replica = inv.owner ~= nil and inv.owner.replica ~= nil and inv.owner.replica.inventory or nil
+            return replica ~= nil and replica:GetActiveItem() or nil
+        end
+
+        -- 每帧刷新吞噬状态：持有物品时图标变红 + 悬停提示"吞噬：物品名"，否则恢复"审视自我"
+        local base_onupdate = btn.OnUpdate
+        btn.OnUpdate = function(self, dt)
+            if base_onupdate ~= nil then
+                base_onupdate(self, dt)
+            end
+
+            local item = GetActiveItem()
+            local armed = item ~= nil and item.replica ~= nil and item.replica.inventoryitem ~= nil
+            local protected = armed and IsDevourProtected(item)
+            if armed ~= btn.__devour_armed or protected ~= btn.__devour_protected then
+                btn.__devour_armed = armed
+                btn.__devour_protected = protected
+                print("[DEVOUR] armed changed ->", tostring(armed), " protected=", tostring(protected), " item=", item ~= nil and item.prefab or "nil", " hasHovertext=", tostring(btn.hovertext ~= nil))
+                if protected then
+                    -- 受保护物品：黄色警告提示，不进入吞噬态
+                    btn:SetHoverText(DEVOUR_PROTECT_LABEL, { colour = { 1, 0.8, 0.2, 1 } })
+                    btn.icon:SetTint(1, 0.8, 0.2, 1)
+                    btn.highlight:SetTint(1, 0.8, 0.2, 1)
+                elseif armed then
+                    local name = (item:GetDisplayName() or ""):gsub("%s+", " ")
+                    btn:SetHoverText(DEVOUR_LABEL .. "：" .. name, { colour = { 1, 0.25, 0.25, 1 } })
+                    btn.icon:SetTint(1, 0.35, 0.35, 1)
+                    btn.highlight:SetTint(1, 0.2, 0.2, 1)
+                else
+                    btn:SetHoverText(GLOBAL.STRINGS.UI.HUD.INSPECT_SELF, { colour = { 1, 1, 1, 1 } })
+                    btn.icon:SetTint(1, 1, 1, 1)
+                    btn.highlight:SetTint(1, 1, 1, 1)
+                end
+            end
+        end
+        btn:StartUpdating()
+
+        -- 原版 Button:OnControl 在鼠标释放后会调用 StopUpdating() 停掉按钮的每帧更新，
+        -- 导致吞噬状态不再刷新（放下物品后提示不恢复）。这里包装 OnControl，点击后立即恢复。
+        local base_oncontrol = btn.OnControl
+        btn.OnControl = function(self, control, down)
+            local ret = base_oncontrol(self, control, down)
+            self:StartUpdating()
+            return ret
+        end
+
+        -- 点击：持有物品时吞噬，否则保持原版"审视自我"
+        local base_onclick = btn.onclick
+        btn:SetOnClick(function()
+            local item = GetActiveItem()
+            print("[DEVOUR] click, item=", item ~= nil and item.prefab or "nil")
+            if item ~= nil then
+                if IsDevourProtected(item) then
+                    -- 受保护物品：拒绝吞噬，播放错误音
+                    if GLOBAL.TheFocalPoint ~= nil and GLOBAL.TheFocalPoint.SoundEmitter ~= nil then
+                        GLOBAL.TheFocalPoint.SoundEmitter:PlaySound("dontstarve/HUD/click_negative")
+                    end
+                else
+                    DevourItem(inv.owner, item)
+                    -- 客户端音效反馈（吞噬音效：吃东西/吞咽声）
+                    if GLOBAL.TheFocalPoint ~= nil and GLOBAL.TheFocalPoint.SoundEmitter ~= nil then
+                        GLOBAL.TheFocalPoint.SoundEmitter:PlaySound("dontstarve/wilson/eat")
+                    end
+                end
+            elseif base_onclick ~= nil then
+                base_onclick()
+            end
+        end)
+    end
 end

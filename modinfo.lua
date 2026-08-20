@@ -8,10 +8,10 @@ description = [[
 󰀜 其他模组的适配可以留言（物品的英文+中文+模组的名称）。
 
 󰀏 近期更新：
+2.6.0: 新增吞噬槽：把装备栏最右侧的"审视自我"头像用作垃圾吞噬，拿起物品拖到头像上点击即可销毁。
 2.5.1: 现在重载世界的时候优先打开背包。
 2.5.0: 启迪之冠现在可以被分配到帽子栏。
 2.4.9: 蜂王冠被错误的识别为帽子。
-2.4.8: 完全移除重写贴图渲染逻辑。
 
 󰀀 图标也抄过来了 嘻嘻。
                     󰀜󰀝󰀀󰀞󰀘󰀁󰀟󰀠󰀡󰀂󰀪󰀕󰀫󰀖󰀛󰀬󰀭󰀮󰀰󰀉󰀚󰀊󰀋󰀌󰀍
@@ -22,7 +22,7 @@ priority = 1                       -- 优先级 默认0 值越大 优先级越�
 
 author = "Breathe"                 -- mod的作者
 
-version = "2.5.1"                  -- mod的版本号
+version = "2.6.0"                  -- mod的版本号
 
 api_version = 10                   -- API版本号
 
@@ -229,21 +229,20 @@ configuration_options = {
         },
         default = false
     },
-    { name = "", label = "Legion-棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
     {
-        name = "MOD_LJ_ZGF",
-        label = "子圭·釜",
-        hover = "强制该物品到身体栏",
+        name = "DEVOUR_ENABLE",
+        label = "吞噬槽",
+        hover = "开启后装备栏最右侧的 审视自我 头像可作吞噬槽：拿起物品拖到头像上左键点击即可销毁。",
         options = {
             {
                 description = "否",
                 data = false,
-                hover = "该物品会装备在背包栏，有失平衡，谨慎开启。"
+                hover = "关闭吞噬槽"
             },
             {
                 description = "是",
                 data = true,
-                hover = "强制装备在身体栏。"
+                hover = "开启吞噬槽（联机时需服务器也启用本 mod）"
             }
         },
         default = true
@@ -376,14 +375,13 @@ if not isZh then
             },
             default = false
         },
-        { name = "", label = "Legion-棱镜", hover = "", options = { { description = "", data = 0 } }, default = 0 },
         {
-            name = "MOD_LJ_ZGF",
-            label = "子圭·釜 (Zigui Cauldron)",
-            hover = "Force this item to the body slot",
+            name = "DEVOUR_ENABLE",
+            label = "Devour slot",
+            hover = "Turn the Inspect Self avatar (rightmost in the equipment bar) into a devour slot: hold an item over it and left-click to destroy it.",
             options = {
-                { description = "No",  data = false, hover = "This item will be equipped in the backpack slot, may unbalance gameplay, enable with caution." },
-                { description = "Yes", data = true,  hover = "Force this item into the body slot." }
+                { description = "No",  data = false, hover = "Disable the devour slot." },
+                { description = "Yes", data = true,  hover = "Enable the devour slot (requires the mod enabled on the server when playing online)." }
             },
             default = true
         },
