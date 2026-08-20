@@ -990,9 +990,9 @@ if DEVOUR_ENABLE then
                     end
                 else
                     DevourItem(inv.owner, item)
-                    -- 客户端音效反馈（吞噬音效：吃东西/吞咽声）
+                    -- 客户端音效反馈（吞噬音效：虫洞吞，一次性非循环）
                     if GLOBAL.TheFocalPoint ~= nil and GLOBAL.TheFocalPoint.SoundEmitter ~= nil then
-                        GLOBAL.TheFocalPoint.SoundEmitter:PlaySound("dontstarve/wilson/eat")
+                        GLOBAL.TheFocalPoint.SoundEmitter:PlaySound("dontstarve/common/teleportworm/swallow")
                     end
                 end
             elseif base_onclick ~= nil then
